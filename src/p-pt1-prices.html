@@ -1,0 +1,901 @@
+<title>Optom Price Step Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: prototype toolbar band on top; below it the seller cabinet (sidebar + "Добавить товар" step 3) and a notes column on wide screens.
+   Look: Optom.uz seller cabinet from Figma (light, green accent, Inter). Deliberately single light theme: it mirrors the product's own UI. */
+:root{
+  --page:#f2f3f5; --card:#ffffff; --ink:#111827; --ink-2:#374151; --muted:#6b7280; --line:#e5e7eb; --line-2:#d1d5db; --soft:#f6f7f9;
+  --green:#2f9e44; --green-ink:#237a35; --green-50:#ecf7ee; --green-200:#a9dcb3;
+  --red:#d92d20; --red-50:#fef3f2; --amber:#b54708; --amber-50:#fffaeb; --blue:#175cd3; --blue-50:#eff6ff;
+  --bar:#1f2937; --bar-ink:#e5e7eb; --bar-muted:#9ca3af;
+  --font:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.45}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* prototype toolbar */
+.pbar{background:var(--bar);color:var(--bar-ink);padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.pbar b{font-weight:600}
+.pbar .tag{font-size:12px;color:var(--bar-muted)}
+.pbar select{background:#111827;color:var(--bar-ink);border:1px solid #374151;border-radius:8px;padding:6px 10px;max-width:100%}
+.pbar button{background:transparent;color:var(--bar-ink);border:1px solid #374151;border-radius:8px;padding:6px 12px;cursor:pointer}
+.pbar button:hover{border-color:#6b7280}
+
+/* page grid */
+.wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+@media (min-width:1700px){.wrap{grid-template-columns:minmax(0,1fr) 330px;align-items:start}}
+.app{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px;min-width:0}
+@media (max-width:900px){.app{grid-template-columns:minmax(0,1fr)}.side{display:none}}
+
+/* sidebar */
+.side{background:transparent;display:flex;flex-direction:column;gap:4px;padding-top:4px}
+.logo{display:flex;align-items:center;gap:8px;font-size:26px;font-weight:600;letter-spacing:-.02em;margin:0 0 18px 8px}
+.logo i{width:28px;height:28px;border-radius:7px;background:repeating-linear-gradient(0deg,var(--green) 0 5px,transparent 5px 8px);display:inline-block}
+.side h6{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:14px 8px 4px;font-weight:600}
+.nav{padding:9px 12px;border-radius:10px;color:var(--ink-2);display:flex;gap:10px;align-items:center}
+.nav.on{background:var(--card);color:var(--ink);font-weight:500;box-shadow:0 1px 2px rgba(17,24,39,.06)}
+.nav span{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.35}
+.nav.on span{background:var(--green);opacity:1}
+
+/* main */
+.main{min-width:0;display:flex;flex-direction:column;gap:14px}
+.crumbs{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.crumbs b{color:var(--ink);font-weight:500}
+.panel{background:var(--card);border-radius:16px;box-shadow:0 1px 2px rgba(17,24,39,.05);min-width:0}
+.phead{padding:20px 24px;border-bottom:1px solid var(--line)}
+.phead h1{font-size:22px;font-weight:600;margin:0 0 2px;letter-spacing:-.01em}
+.phead p{margin:0;color:var(--muted)}
+.steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;padding:20px 24px;border-bottom:1px solid var(--line);overflow-x:auto}
+.st{display:flex;flex-direction:column;gap:6px;min-width:110px}
+.st .dot{display:flex;align-items:center}
+.st .dot i{width:22px;height:22px;border-radius:50%;border:2px solid var(--line-2);background:var(--card);display:grid;place-items:center;font-style:normal;font-size:12px;color:#fff;flex:none}
+.st .dot u{flex:1;height:2px;background:var(--line);margin-left:6px}
+.st.done .dot i{background:var(--green);border-color:var(--green)}
+.st.done .dot u{background:var(--green)}
+.st.cur .dot i{border-color:var(--green);box-shadow:0 0 0 3px var(--green-50);background:radial-gradient(var(--green) 0 4px,var(--card) 5px)}
+.st b{font-weight:500;font-size:13px}
+.st.cur b,.st.cur small{color:var(--green-ink)}
+.st small{color:var(--muted);font-size:12px;line-height:1.35}
+
+.body{display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;padding:24px}
+@media (max-width:1250px){.body{grid-template-columns:minmax(0,1fr)}}
+.lab h3{margin:0 0 2px;font-size:14px;font-weight:600}
+.lab p{margin:0;color:var(--muted)}
+.lab .hint{margin-top:14px;padding:10px 12px;border-radius:10px;background:var(--soft);color:var(--ink-2);font-size:12.5px}
+.content{min-width:0;display:flex;flex-direction:column;gap:16px}
+
+/* type cards */
+.types{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:700px){.types{grid-template-columns:minmax(0,1fr)}}
+.tcard{border:1px solid var(--line-2);border-radius:12px;padding:12px 14px;text-align:left;background:var(--card);cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px}
+.tcard b{font-weight:600}
+.tcard small{color:var(--muted);grid-column:1}
+.tcard .rad{grid-row:1/3;grid-column:2;align-self:center;width:18px;height:18px;border-radius:50%;border:1.6px solid var(--line-2)}
+.tcard.on{background:var(--green-50);border-color:var(--green-200)}
+.tcard.on small{color:var(--green-ink)}
+.tcard.on .rad{border-color:var(--green);background:radial-gradient(var(--green) 0 4px,#fff 5px)}
+
+.box{border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.seg{display:inline-flex;background:var(--soft);border-radius:10px;padding:3px;gap:2px;align-self:flex-start;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:7px 16px;border-radius:8px;cursor:pointer;color:var(--ink-2)}
+.seg button.on{background:var(--card);box-shadow:0 1px 2px rgba(17,24,39,.12);color:var(--ink);font-weight:500}
+.seg.sm button{padding:5px 12px;font-size:13px}
+
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px}
+@media (max-width:700px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.f{display:flex;flex-direction:column;gap:6px;min-width:0}
+.f > label,.flab{font-weight:500;font-size:13.5px}
+.f .sub{color:var(--muted);font-size:12px}
+.inp{display:flex;border:1px solid var(--line-2);border-radius:10px;background:var(--card);overflow:hidden;min-width:0}
+.inp input{border:0;outline:0;padding:10px 12px;min-width:0;width:100%;flex:1;background:transparent;font-variant-numeric:tabular-nums}
+.inp:focus-within{border-color:var(--green);box-shadow:0 0 0 3px var(--green-50)}
+.inp .suf{padding:0 12px;display:flex;align-items:center;border-left:1px solid var(--line);color:var(--ink-2);background:var(--soft);font-weight:500;white-space:nowrap}
+.inp select{border:0;border-left:1px solid var(--line);background:var(--soft);padding:0 10px;font-weight:600;cursor:pointer}
+.inp.ro{background:var(--soft)}
+.inp.ro input{color:var(--muted)}
+.f.bad .inp,.inp.bad{border-color:var(--red);box-shadow:0 0 0 3px var(--red-50)}
+.err{color:var(--red);font-size:12px;min-height:0}
+.err:empty{display:none}
+select.plain{border:1px solid var(--line-2);border-radius:10px;padding:10px 12px;background:var(--card);min-width:0}
+
+.btn{border:1px solid var(--line-2);background:var(--card);border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:500;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.btn:hover{border-color:#9ca3af}
+.btn.pri{background:var(--green);border-color:var(--green);color:#fff}
+.btn.pri:hover{background:var(--green-ink)}
+.btn.soft{background:var(--green-50);border-color:transparent;color:var(--green-ink)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--green-ink);padding:6px 8px}
+.btn.danger{color:var(--red)}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:8px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.spacer{flex:1}
+
+.note{border-radius:10px;padding:10px 12px;font-size:13px;display:flex;gap:8px}
+.note.info{background:var(--blue-50);color:#1e3a8a}
+.note.warn{background:var(--amber-50);color:#7a2e0b}
+.note.ok{background:var(--green-50);color:var(--green-ink)}
+.note.prop{border:1px dashed #c4b5fd;background:#faf7ff;color:#4c1d95}
+.flag{display:inline-block;font-size:11px;font-weight:600;padding:1px 6px;border-radius:6px;background:#ede9fe;color:#5b21b6;vertical-align:1px}
+
+/* error banner */
+.ebanner{border:1px solid #fecdca;background:var(--red-50);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.ebanner b{color:var(--red)}
+.ebanner ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
+.ebanner a{color:var(--ink);text-decoration:underline;cursor:pointer}
+
+/* inner stepper for Разная цена */
+.istep{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.istep button{border:0;background:transparent;display:flex;gap:8px;align-items:center;padding:6px 10px 6px 6px;border-radius:999px;cursor:pointer;color:var(--muted)}
+.istep button i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:600;background:var(--soft);color:var(--muted)}
+.istep button.on{background:var(--green-50);color:var(--green-ink);font-weight:500}
+.istep button.on i{background:var(--green);color:#fff}
+.istep button.done i{background:var(--green-200);color:var(--green-ink)}
+.istep button:disabled{cursor:default;opacity:.55}
+.istep .sep{width:18px;height:1px;background:var(--line-2)}
+
+/* characteristics */
+.char{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.char.on{border-color:var(--green-200);background:#fbfefb}
+.char head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.char head label{display:flex;gap:8px;align-items:center;font-weight:600;cursor:pointer}
+.char head small{color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line-2);border-radius:999px;padding:6px 12px;background:var(--card);cursor:pointer;display:inline-flex;gap:7px;align-items:center}
+.chip.on{border-color:var(--green);background:var(--green-50);color:var(--green-ink);font-weight:500}
+.chip.on::after{content:"✓";font-size:12px}
+.sw{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.15);display:inline-block;flex:none}
+.combo{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:var(--soft)}
+.combo b{font-size:20px;font-variant-numeric:tabular-nums}
+input[type=checkbox]{width:16px;height:16px;accent-color:var(--green);cursor:pointer;margin:0}
+
+/* progress */
+.prog{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.prog .bar{width:160px;max-width:100%;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.prog .bar span{display:block;height:100%;background:var(--green)}
+.prog small{color:var(--muted)}
+
+/* variant table */
+.tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table.vt{border-collapse:separate;border-spacing:0;width:100%;min-width:720px}
+table.vt.cmp{min-width:600px}
+.vt th{font-size:12px;font-weight:500;color:var(--muted);text-align:left;padding:9px 10px;background:var(--soft);border-bottom:1px solid var(--line);white-space:nowrap}
+.vt td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.vt tr:last-child td{border-bottom:0}
+.vt tr.grp td{background:#fafbfa;padding:9px 10px}
+.vt tr.grp b{font-weight:600}
+.vt tr.off td{background:#fafafa;color:var(--muted)}
+.vt tr.off .vname{text-decoration:line-through}
+.vt tr.sel td{background:#f3faf4}
+.vt .inp input{padding:7px 9px;width:100%}
+.vt .inp .suf{padding:0 8px;font-size:12.5px}
+.vt .w-price{width:190px}.vt .w-moq{width:120px}
+.vname{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.vtag{display:inline-flex;gap:6px;align-items:center;border-radius:7px;background:var(--soft);padding:3px 8px;font-size:13px;white-space:nowrap}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.eq{font-size:11.5px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
+.tog{position:relative;width:34px;height:20px;border-radius:10px;background:var(--line-2);border:0;cursor:pointer;flex:none}
+.tog::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
+.tog.on{background:var(--green)}
+.tog.on::after{left:16px}
+.ginp{display:flex;gap:6px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
+.ginp .inp{width:150px}
+.ginp .inp input{padding:6px 8px}
+
+.bulk{position:sticky;bottom:10px;z-index:3;background:var(--bar);color:var(--bar-ink);border-radius:12px;padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;box-shadow:0 8px 24px rgba(17,24,39,.25)}
+.bulk .inp{width:150px;border-color:#374151;background:#111827}
+.bulk .inp input{color:#fff;padding:7px 9px}
+.bulk .inp .suf{background:#1f2937;border-color:#374151;color:var(--bar-ink)}
+.bulk .btn{background:#374151;border-color:#374151;color:#fff}
+.bulk .btn.pri{background:var(--green);border-color:var(--green)}
+
+/* matrix */
+table.mx{border-collapse:separate;border-spacing:0;min-width:640px;width:100%}
+.mx th,.mx td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:8px;min-width:150px}
+.mx tr > *:last-child{border-right:0}
+.mx tr:last-child > *{border-bottom:0}
+.mx thead th{background:var(--soft);font-weight:500;text-align:left;vertical-align:top}
+.mx tbody th{background:#fafbfa;text-align:left;font-weight:600;white-space:nowrap;vertical-align:top}
+.mx .hd{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.mx .mini{display:flex;gap:4px}
+.mx .mini .inp{flex:1}
+.mx .mini .inp input{padding:5px 7px;font-size:12.5px}
+.mx td .cell{display:flex;gap:4px;align-items:center}
+.mx td .inp input{padding:7px 8px}
+.mx td.off{background:repeating-linear-gradient(135deg,#f6f7f9 0 6px,#eef0f3 6px 12px);color:var(--muted);font-size:12.5px}
+.xbtn{border:0;background:transparent;color:var(--muted);cursor:pointer;width:24px;height:24px;border-radius:6px;flex:none}
+.xbtn:hover{background:var(--soft);color:var(--red)}
+.linkbtn{border:0;background:transparent;color:var(--green-ink);cursor:pointer;padding:0;text-decoration:underline;font-size:12.5px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+
+/* review */
+.rv{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+@media (max-width:760px){.rv{grid-template-columns:minmax(0,1fr)}}
+.stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.stats{display:grid;gap:10px}
+.stat{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.stat small{color:var(--muted);display:block}
+.stat b{font-size:17px;font-variant-numeric:tabular-nums}
+.warns{display:flex;flex-direction:column;gap:6px}
+
+/* buyer preview */
+.pv{border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px;background:var(--card)}
+.pv .eyb{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.pimg{aspect-ratio:4/3;max-width:100%;border-radius:10px;background:linear-gradient(160deg,#eef1f4,#e3e7ec);display:grid;place-items:center}
+.pimg i{width:64px;height:118px;border-radius:12px;background:linear-gradient(170deg,#3b4252,#1f2430);box-shadow:inset 0 0 0 3px #575f70}
+.pv h4{margin:0;font-size:15px;font-weight:600}
+.pprice{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.pprice s{font-size:14px;font-weight:400;color:var(--muted);margin-left:6px}
+.popt{display:flex;flex-direction:column;gap:6px}
+.popt small{color:var(--muted)}
+.popt .chips .chip{padding:5px 10px;font-size:13px}
+.chip.dis{opacity:.45;text-decoration:line-through;cursor:not-allowed}
+.chip.pick{border-color:var(--ink);font-weight:600}
+.tierlist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.tierlist div{display:flex;justify-content:space-between;padding:7px 10px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.tierlist div:last-child{border-bottom:0}
+.tierlist .hit{background:var(--green-50);font-weight:600}
+
+/* tiers */
+.tiers{display:flex;flex-direction:column;gap:8px}
+.tier{display:grid;grid-template-columns:28px minmax(0,1fr) 18px minmax(0,1fr) minmax(0,1.4fr) 92px 32px;gap:8px;align-items:start}
+@media (max-width:760px){.tier{grid-template-columns:28px minmax(0,1fr) minmax(0,1fr);}.tier .dash,.tier .sv{display:none}.tier .tp{grid-column:2/4}.tier .td{grid-column:3}}
+.tier .no{width:28px;height:38px;display:grid;place-items:center;color:var(--muted);font-weight:600}
+.tier .dash{height:38px;display:grid;place-items:center;color:var(--muted)}
+.tier .sv{height:38px;display:flex;align-items:center}
+.save{font-size:12px;font-weight:600;color:var(--green-ink);background:var(--green-50);border-radius:6px;padding:2px 7px}
+.tierhead{display:grid;grid-template-columns:28px minmax(0,1fr) 18px minmax(0,1fr) minmax(0,1.4fr) 92px 32px;gap:8px;color:var(--muted);font-size:12px}
+@media (max-width:760px){.tierhead{display:none}}
+.ladder{display:flex;height:34px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.ladder div{display:flex;align-items:center;justify-content:center;font-size:12px;font-variant-numeric:tabular-nums;border-right:1px solid #fff;white-space:nowrap;overflow:hidden;padding:0 4px}
+.calc{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 14px;border-radius:12px;background:var(--soft)}
+.calc .inp{width:110px}
+
+.foot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:16px 24px;border-top:1px solid var(--line)}
+
+/* modal + toast */
+.scrim{position:fixed;inset:0;background:rgba(17,24,39,.45);display:grid;place-items:center;z-index:20;padding:16px}
+.modal{background:var(--card);border-radius:16px;max-width:460px;width:100%;padding:20px;display:flex;flex-direction:column;gap:12px}
+.modal h3{margin:0;font-size:17px}
+.modal ul{margin:0;padding-left:18px;color:var(--ink-2);display:flex;flex-direction:column;gap:4px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--bar);color:#fff;padding:10px 16px;border-radius:10px;z-index:30;max-width:calc(100% - 32px)}
+
+/* notes */
+.notes{background:var(--card);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+@media (min-width:1700px){.notes{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto}}
+.notes h2{margin:0;font-size:15px}
+.notes .eyb{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.notes ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;color:var(--ink-2);font-size:13px}
+.notes p{margin:0;font-size:13px;color:var(--ink-2)}
+/* v0.4: own values */
+.char .chead{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.char .chead label{display:flex;gap:8px;align-items:center;font-weight:600;cursor:pointer}
+.char .chead small{color:var(--muted)}
+.chip.add{border-style:dashed;color:var(--green-ink)}
+.chip.own{border-style:dashed}
+.chip.own small{font-size:11px;color:var(--muted)}
+.chip.own.on small{color:var(--green-ink)}
+.chip.new{box-shadow:0 0 0 3px var(--green-50)}
+.match{font-size:12.5px;border-radius:8px;padding:6px 9px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.match.ex{background:var(--red-50);color:#7a271a}
+.match.sim{background:var(--amber-50);color:#7a2e0b}
+.modal.wide{max-width:560px}
+.modal .f{gap:5px}
+input[type=color]{width:34px;height:34px;border:1px solid var(--line-2);border-radius:8px;padding:2px;background:var(--card);cursor:pointer}
+@media (max-width:900px){.side{display:none}}
+.modal .row .sub{color:var(--muted);font-size:12px}
+</style>
+
+<div class="pbar">
+  <b>P-PT1 · Цена и остатки</b>
+  <span class="tag">Prototype for the Price types PRD · v0.5 · 13.11.2026 · UI in Russian, notes in English</span>
+  <span class="spacer"></span>
+  <label for="scn" class="tag">Scenario</label>
+  <select id="scn" aria-label="Scenario"></select>
+  <button type="button" id="reset">Reset scenario</button>
+</div>
+
+<div class="wrap">
+  <div class="app">
+    <nav class="side" aria-label="Seller cabinet">
+      <div class="logo"><i></i>optom</div>
+      <h6>Основное</h6>
+      <div class="nav"><span></span>Аналитика</div>
+      <div class="nav on"><span></span>Товары</div>
+      <div class="nav"><span></span>Заказы</div>
+      <div class="nav"><span></span>Чаты</div>
+      <h6>Организация</h6>
+      <div class="nav"><span></span>Сотрудники</div>
+      <div class="nav"><span></span>Филиалы</div>
+      <h6>Система</h6>
+      <div class="nav"><span></span>Настройки</div>
+      <div class="nav"><span></span>Тарифы</div>
+    </nav>
+    <main class="main">
+      <div class="crumbs"><b>Товары</b> / <span>Добавить товар</span></div>
+      <section class="panel">
+        <div class="phead"><h1>Добавить товар</h1><p>Samsung Galaxy A55 5G · категория «Смартфоны»</p></div>
+        <div class="steps">
+          <div class="st done"><div class="dot"><i>✓</i><u></u></div><b>Основная информация</b><small>Добавьте основные сведения о товаре</small></div>
+          <div class="st done"><div class="dot"><i>✓</i><u></u></div><b>Характеристики и медиа</b><small>Укажите характеристики и загрузите фотографии</small></div>
+          <div class="st cur"><div class="dot"><i></i><u></u></div><b>Цена и остатки</b><small>Настройте стоимость и наличие</small></div>
+          <div class="st"><div class="dot"><i></i><u></u></div><b>Доставка</b><small>Выберите место хранения товара</small></div>
+          <div class="st"><div class="dot"><i></i></div><b>Проверка</b><small>Проверьте информацию перед публикацией</small></div>
+        </div>
+        <div class="body">
+          <div class="lab">
+            <h3>Цена и остатки</h3>
+            <p>Настройте стоимость и минимальный заказ</p>
+            <div class="hint" id="sideHint"></div>
+          </div>
+          <div class="content" id="root"></div>
+        </div>
+        <div class="foot">
+          <button type="button" class="btn soft" data-act="back">← Назад</button>
+          <span class="spacer"></span>
+          <button type="button" class="btn">Отменить создание</button>
+          <button type="button" class="btn pri" data-act="continue" id="contBtn">Продолжить →</button>
+        </div>
+      </section>
+    </main>
+  </div>
+  <aside class="notes" id="notes" aria-label="Prototype notes"></aside>
+</div>
+<div id="layer"></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- reference data (category «Смартфоны») ---------- */
+var CHARS=[
+  {id:"mem",name:"Память (ОЗУ / встроенная)",ordered:true,values:[
+    {v:"6/128 ГБ"},{v:"8/128 ГБ"},{v:"8/256 ГБ"},{v:"12/256 ГБ"},{v:"12/512 ГБ"}]},
+  {id:"color",name:"Цвет",values:[
+    {v:"Белый",c:"#f4f4f4"},{v:"Чёрный",c:"#1f2023"},{v:"Голубой",c:"#9cc4ea"},{v:"Лаванда",c:"#c9b8e8"},{v:"Хаки",c:"#7a7a52"}]},
+  {id:"kit",name:"Комплектация",values:[{v:"Стандарт"},{v:"С зарядкой 25 Вт"}]}
+];
+var FILTERABLE={mem:true,color:true,kit:false};var OWN_MAX=40;
+var RATE={USD:12650,EUR:13720};
+var CUR_LABEL={UZS:"сум",USD:"USD",EUR:"EUR"};
+
+/* ---------- state ---------- */
+var S;
+function base(){return {
+  type:"fixed", mode:"single", currency:"UZS",
+  single:{price:4380000,moq:1},
+  disc:{kind:"none",value:null},
+  chars:{mem:[],color:[],kit:[]}, charOrder:["mem","color","kit"],
+  vars:{}, istep:1, view:"table", groupBy:"mem", mxTab:null, mxMetric:"price", sel:{},
+  tiers:[{from:10,to:49,price:52000},{from:50,to:199,price:48000},{from:200,to:null,price:45000}],
+  rangeChars:false, calcQty:60,
+  neg:{moq:20,hintOn:false,hint:null}, negChars:false,
+  pv:{}, showErr:false, live:false, modal:null, toast:null,
+  own:{mem:[],color:[],kit:[]}, ownM:null, justAdded:null
+};}
+
+/* ---------- helpers ---------- */
+function fmt(n){if(n===null||n===undefined||n==="")return "";return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g," ");}
+function parse(s){var d=String(s==null?"":s).replace(/[^\d]/g,"");return d===""?null:parseInt(d,10);}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+function baseChar(id){for(var i=0;i<CHARS.length;i++)if(CHARS[i].id===id)return CHARS[i];}
+function charById(id){var b=baseChar(id);if(!b)return b;return {id:b.id,name:b.name,ordered:b.ordered,values:b.values.concat((S&&S.own&&S.own[id])||[])};}
+function norm(t){return String(t||"").toLowerCase().replace(/ё/g,"е").replace(/gb/g,"гб").replace(/tb/g,"тб").replace(/[\s\-_.,()\/]+/g,"");}
+function matchIn(list,text){var n=norm(text);if(!n)return null;var sim=null;for(var i=0;i<list.length;i++){var m=norm(list[i].v);if(m===n)return {kind:"ex",item:list[i]};if(!sim&&m.length>=4&&n.length>=4&&(m.indexOf(n)>-1||n.indexOf(m)>-1))sim={kind:"sim",item:list[i]};}return sim;}
+function swatch(cid,v){if(cid!=="color")return "";var c=charById("color").values.filter(function(x){return x.v===v;})[0];return c?'<i class="sw" style="background:'+c.c+'"></i>':"";}
+function activeChars(){return S.charOrder.filter(function(id){return S.chars[id].length>0;});}
+function combos(){
+  var ids=activeChars(); if(!ids.length)return [];
+  var out=[[]];
+  ids.forEach(function(id){var vals=charById(id).values.map(function(x){return x.v;}).filter(function(v){return S.chars[id].indexOf(v)>-1;});var n=[];out.forEach(function(p){vals.forEach(function(v){n.push(p.concat([{c:id,v:v}]));});});out=n;});
+  return out.map(function(parts){var key=parts.map(function(p){return p.v;}).join(" | ");if(!S.vars[key])S.vars[key]={on:true,price:null,moq:1};return {key:key,parts:parts,d:S.vars[key]};});
+}
+function vlabel(v){return v.parts.map(function(p){return p.v;}).join(" · ");}
+function final(p){if(p==null)return null;var d=S.disc;if(d.kind==="pct"&&d.value)return Math.round(p*(1-d.value/100));if(d.kind==="sum"&&d.value)return p-d.value;return p;}
+function toUzs(p){return S.currency==="UZS"?p:Math.round(p*RATE[S.currency]);}
+function curSuf(){return CUR_LABEL[S.currency];}
+function plural(n,a,b,c){var m10=n%10,m100=n%100;if(m10===1&&m100!==11)return a;if(m10>=2&&m10<=4&&(m100<10||m100>=20))return b;return c;}
+
+/* ---------- validation ---------- */
+function validate(){
+  var E=[];function add(k,msg,label){E.push({k:k,msg:msg,label:label||msg});}
+  var vs=null;
+  if(S.type!=="neg"&&S.disc.kind!=="none"){
+    var dv=S.disc.value;
+    if(S.disc.kind==="pct"&&(dv==null||dv<1||dv>99))add("disc","Скидка — от 1 до 99 %","Скидка: от 1 до 99 %");
+    if(S.disc.kind==="sum"){var minp=S.mode==="single"?S.single.price:Math.min.apply(null,(combos().filter(function(v){return v.d.on&&v.d.price;}).map(function(v){return v.d.price;})).concat([Infinity]));
+      if(dv==null||dv<1)add("disc","Укажите сумму скидки");else if(minp!==Infinity&&minp!=null&&dv>=minp)add("disc","Скидка должна быть меньше цены","Скидка больше самой низкой цены");}
+  }
+  if(S.type==="fixed"&&S.mode==="single"){
+    if(!S.single.price)add("single.price","Укажите цену","Цена за единицу: укажите цену");
+    var m=S.single.moq;if(m==null||m<1||m>100000)add("single.moq","Целое число от 1 до 100 000","Минимальный заказ: от 1 до 100 000");
+  }
+  if(S.type==="fixed"&&S.mode==="multi"){
+    vs=combos();
+    if(activeChars().length===0)add("chars","Выберите характеристику, которая отличается у вариантов, и её значения","Варианты: выберите характеристику и значения");
+    else if(vs.length<2)add("chars","Нужно минимум 2 варианта. Выберите ещё значения или используйте «Единая цена»","Варианты: нужно минимум 2 варианта");
+    var on=vs.filter(function(v){return v.d.on;});
+    if(vs.length>=2&&!on.length)add("vars","Хотя бы один вариант должен быть в продаже");
+    on.forEach(function(v){
+      if(!v.d.price)add("v:"+v.key+":price","Укажите цену",vlabel(v)+": укажите цену");
+      if(v.d.moq==null||v.d.moq<1||v.d.moq>100000)add("v:"+v.key+":moq","От 1 до 100 000",vlabel(v)+": мин. заказ от 1 до 100 000");
+    });
+  }
+  if(S.type==="range"){
+    var t=S.tiers;
+    if(t.length<2)add("tiers","Добавьте минимум 2 диапазона","Диапазоны: минимум 2");
+    t.forEach(function(r,i){
+      var n="Диапазон "+(i+1)+": ";
+      if(i===0&&(r.from==null||r.from<1||r.from>100000))add("t"+i+".from","Целое число от 1 до 100 000",n+"«от» от 1 до 100 000");
+      var last=i===t.length-1;
+      if(!last&&r.to==null)add("t"+i+".to","Укажите «до»",n+"укажите «до»");
+      if(r.to!=null&&r.from!=null&&r.to<=r.from)add("t"+i+".to","«До» должно быть больше «от»",n+"«до» должно быть больше «от»");
+      if(!r.price)add("t"+i+".price","Укажите цену",n+"укажите цену");
+      else if(i>0&&t[i-1].price&&r.price>=t[i-1].price)add("t"+i+".price","Цена должна быть ниже, чем в предыдущем диапазоне",n+"цена должна быть ниже предыдущей");
+    });
+  }
+  if(S.type==="neg"&&S.neg.moq!=null&&(S.neg.moq<1||S.neg.moq>100000))add("neg.moq","Целое число от 1 до 100 000");
+  return E;
+}
+function errMap(){var m={};if(!S.showErr)return m;validate().forEach(function(e){if(!m[e.k])m[e.k]=e.msg;});return m;}
+
+/* ---------- field builders ---------- */
+function money(k,val,opts){opts=opts||{};var E=errMap();
+  return '<div class="inp'+(E[k]?" bad":"")+'" data-wrap="'+esc(k)+'"><input id="'+esc(opts.id||("in-"+k))+'" inputmode="numeric" data-k="'+esc(k)+'" value="'+fmt(val)+'" placeholder="'+(opts.ph||"0")+'" aria-label="'+esc(opts.aria||k)+'"><span class="suf">'+(opts.suf||curSuf())+'</span></div>';}
+function field(k,label,inner,sub){var E=errMap();return '<div class="f'+(E[k]?" bad":"")+'" data-f="'+esc(k)+'"><label for="in-'+esc(k)+'">'+label+'</label>'+inner+(sub?'<span class="sub">'+sub+'</span>':"")+'<span class="err" data-err="'+esc(k)+'">'+(E[k]||"")+'</span></div>';}
+
+/* ---------- render ---------- */
+var root=document.getElementById("root");
+function render(){
+  var h="";
+  var E=S.showErr?validate():[];
+  if(E.length){
+    h+='<div class="ebanner" id="ebanner" role="alert"><b>'+E.length+' '+plural(E.length,"ошибка","ошибки","ошибок")+' — исправьте, чтобы продолжить</b><ul>'+E.slice(0,6).map(function(e){return '<li><a data-go="'+esc(e.k)+'">'+esc(e.label)+'</a></li>';}).join("")+(E.length>6?'<li>и ещё '+(E.length-6)+'</li>':"")+'</ul></div>';
+  }
+  h+='<div class="types" role="radiogroup" aria-label="Тип цены">'+
+    tcard("fixed","Фиксированная цена","Одна цена или своя цена для каждого варианта")+
+    tcard("range","Цена по диапазонам","Цена за штуку зависит от количества")+
+    tcard("neg","Договорная цена","Цена обсуждается с покупателем в чате")+'</div>';
+  if(S.live)h+='<div class="note warn">Товар опубликован. Смена типа цены повлияет на корзины покупателей — см. диалог при смене.</div>';
+  if(S.type==="fixed")h+=fixedBox();
+  if(S.type==="range")h+=rangeBox();
+  if(S.type==="neg")h+=negBox();
+  root.innerHTML=h;
+  document.getElementById("sideHint").innerHTML=sideHint();
+  var cb=document.getElementById("contBtn");
+  cb.textContent=(S.type==="fixed"&&S.mode==="multi"&&S.istep<3)?(S.istep===1?"Далее: цены →":"Далее: проверка →"):"Продолжить →";
+  renderLayer();
+}
+function tcard(t,name,sub){return '<button type="button" role="radio" aria-checked="'+(S.type===t)+'" class="tcard'+(S.type===t?" on":"")+'" data-act="type" data-v="'+t+'"><b>'+name+'</b><small>'+sub+'</small><span class="rad"></span></button>';}
+function sideHint(){
+  if(S.type==="fixed"&&S.mode==="single")return "Одна цена для любого количества. Остаток на складе указывается по филиалам на шаге «Доставка».";
+  if(S.type==="fixed")return "Своя цена для каждого варианта. Три шага: что отличается → цены → проверка. Покупатель увидит «от» самой низкой цены.";
+  if(S.type==="range")return "Чем больше покупатель берёт, тем ниже цена за штуку. Диапазоны общие для всех вариантов товара.";
+  return "Цена не показывается. Покупатель пишет вам в чат, вы отправляете предложение цены.";
+}
+
+/* ----- fixed ----- */
+function currencyRow(){
+  return '<div class="row"><span class="flab">Валюта цен</span><div class="seg sm" role="group" aria-label="Валюта">'+["UZS","USD","EUR"].map(function(c){return '<button type="button" class="'+(S.currency===c?"on":"")+'" data-act="cur" data-v="'+c+'">'+CUR_LABEL[c]+'</button>';}).join("")+'</div>'+(S.currency!=="UZS"?'<span class="eq">Курс ЦБ: 1 '+S.currency+' = '+fmt(RATE[S.currency])+' сум · обновляется каждый час</span>':"")+'</div>';
+}
+function discountBlock(){
+  var d=S.disc, allowSum=S.type!=="range";
+  var inner='<div class="grid2"><div class="f"><label for="disc-kind">Скидка</label><select id="disc-kind" class="plain" data-k="disc.kind"><option value="none"'+(d.kind==="none"?" selected":"")+'>Без скидки</option><option value="pct"'+(d.kind==="pct"?" selected":"")+'>Процент</option>'+(allowSum?'<option value="sum"'+(d.kind==="sum"?" selected":"")+'>Сумма</option>':"")+'</select>'+(S.type==="range"?'<span class="sub">Для диапазонов — только процент, он применяется ко всем диапазонам</span>':"")+'</div>';
+  if(d.kind!=="none")inner+=field("disc",d.kind==="pct"?"Размер скидки":"Сумма скидки",money("disc",d.value,{suf:d.kind==="pct"?"%":curSuf(),aria:"Скидка"}),d.kind==="sum"&&S.mode==="multi"?"Одна сумма вычитается из цены каждого варианта":"");
+  return inner+'</div>';
+}
+function fixedBox(){
+  var h='<div class="box"><div class="seg" role="group" aria-label="Цена"><button type="button" class="'+(S.mode==="single"?"on":"")+'" data-act="mode" data-v="single">Единая цена</button><button type="button" class="'+(S.mode==="multi"?"on":"")+'" data-act="mode" data-v="multi">Разная цена по вариантам</button></div>';
+  if(S.mode==="single"){
+    h+=currencyRow();
+    h+='<div class="grid2">'+field("single.price","Цена за единицу",money("single.price",S.single.price,{aria:"Цена за единицу"}))+
+      '<div class="f"><label for="eq-single">Цена в сумах</label><div class="inp ro"><input id="eq-single" readonly value="'+(S.single.price?fmt(toUzs(S.single.price))+" сум":"")+'" data-derived="eq-single"></div><span class="sub">'+(S.currency==="UZS"?"Совпадает с ценой":"Пересчитывается каждый час по курсу ЦБ")+'</span></div>'+
+      field("single.moq","Минимальный заказ",money("single.moq",S.single.moq,{suf:"шт.",aria:"Минимальный заказ"}),"Покупатель не сможет заказать меньше")+'</div>';
+    h+=discountBlock();
+    h+=buyerLine();
+    h+='</div>';
+    return h;
+  }
+  h+='<div class="istep" role="tablist" aria-label="Шаги">'+istepBtn(1,"Что отличается")+'<span class="sep"></span>'+istepBtn(2,"Цены")+'<span class="sep"></span>'+istepBtn(3,"Проверка")+'</div>';
+  if(S.istep===1)h+=charsEditor("fixed");
+  if(S.istep===2)h+=pricesStep();
+  if(S.istep===3)h+=reviewStep();
+  return h+'</div>';
+}
+function istepBtn(n,label){
+  var vs=combos(),ok=vs.length>=2;
+  var dis=n>1&&!ok;
+  return '<button type="button" role="tab" aria-selected="'+(S.istep===n)+'" class="'+(S.istep===n?"on":(S.istep>n?"done":""))+'" data-act="istep" data-v="'+n+'"'+(dis?" disabled":"")+'><i>'+(S.istep>n?"✓":n)+'</i>'+label+'</button>';
+}
+function buyerLine(){
+  var p=S.single.price;if(!p)return "";
+  var f=final(p);
+  return '<div class="note ok">Покупатель увидит: <b class="num" data-derived="buyer-line">'+fmt(toUzs(f))+' сум</b>'+(f!==p?' <s class="num">'+fmt(toUzs(p))+' сум</s>':"")+' · мин. заказ '+(S.single.moq||1)+' шт.</div>';
+}
+
+/* step 1: characteristics */
+function charsEditor(ctx){
+  var E=errMap();
+  var h='<div class="f'+(E.chars?" bad":"")+'" data-f="chars"><span class="flab">Что отличается у вариантов?</span><span class="sub">Отметьте характеристики, от которых зависит '+(ctx==="fixed"?"цена":"наличие")+', и выберите значения. Значения — из характеристик категории «Смартфоны».</span><span class="err" data-err="chars">'+(E.chars||"")+'</span></div>';
+  S.charOrder.forEach(function(id){
+    var c=charById(id),on=S.chars[id].length>0||S["open_"+id];
+    h+='<div class="char'+(on?" on":"")+'"><div class="chead"><label><input type="checkbox" data-act="charOn" data-v="'+id+'"'+(on?" checked":"")+'> '+c.name+'</label><small>'+(on?S.chars[id].length+" из "+c.values.length+" выбрано":"не отличается")+'</small>'+(on?'<span class="spacer"></span><button type="button" class="btn ghost sm" data-act="charAll" data-v="'+id+'">Выбрать все</button>':"")+'</div>';
+    if(on)h+='<div class="chips">'+c.values.map(function(x){var sel=S.chars[id].indexOf(x.v)>-1;return '<button type="button" class="chip'+(sel?" on":"")+(x.own?" own":"")+(S.justAdded===x.v?" new":"")+'" aria-pressed="'+sel+'" data-act="val" data-c="'+id+'" data-v="'+esc(x.v)+'"'+(x.own?' title="Своё значение: видите только вы. В фильтрах каталога его нет."':"")+'>'+swatch(id,x.v)+esc(x.v)+(x.own?' <small>своё</small>':"")+'</button>';}).join("")+'<button type="button" class="chip add" data-act="ownAdd" data-v="'+id+'" title="Добавить значение, которого нет в списке. Его увидите только вы">+ Своё значение</button></div>';
+    h+='</div>';
+  });
+  var vs=combos(),ids=activeChars();
+  h+='<div class="combo"><span>Получится</span><b>'+vs.length+'</b><span>'+plural(vs.length,"вариант","варианта","вариантов")+'</span>'+(ids.length?'<span class="sub" style="color:var(--muted)">'+ids.map(function(id){return S.chars[id].length;}).join(" × ")+(ids.length>1?" = "+vs.length:"")+'</span>':"")+'<span class="spacer"></span>'+(vs.length>60?'<span class="note warn" style="padding:4px 10px">Много вариантов: заполнение займёт время. Лимит — 100 <span class="flag">⚑</span></span>':"")+'</div>';
+  if(ctx==="fixed")h+='<div class="note info">Вариант, которого нет в продаже (например, 12/512 ГБ в цвете Хаки), отключите на следующем шаге — его не нужно удалять из списка значений.</div><div class="row"><span class="spacer"></span><button type="button" class="btn pri" data-act="istep" data-v="2"'+(vs.length<2?" disabled":"")+'>Далее: указать цены →</button></div>';
+  return h;
+}
+
+/* step 2: prices */
+function stats(vs){var on=vs.filter(function(v){return v.d.on;});var filled=on.filter(function(v){return v.d.price;}).length;return {on:on.length,filled:filled,off:vs.length-on.length};}
+function pricesStep(){
+  var vs=combos(),st=stats(vs),ids=activeChars();
+  var h=currencyRow();
+  h+='<div class="row"><div class="prog"><div class="bar"><span data-derived="progbar" style="width:'+(st.on?Math.round(st.filled/st.on*100):0)+'%"></span></div><b data-derived="progtxt">Цены: '+st.filled+' из '+st.on+'</b><small>'+(st.off?st.off+" не в продаже":"все в продаже")+'</small></div><span class="spacer"></span>';
+  h+='<div class="seg sm" role="group" aria-label="Вид"><button type="button" class="'+(S.view==="table"?"on":"")+'" data-act="view" data-v="table">Таблица</button><button type="button" class="'+(S.view==="matrix"?"on":"")+'" data-act="view" data-v="matrix"'+(ids.length<2?' disabled title="Нужны 2 характеристики"':"")+'>Матрица</button></div></div>';
+  if(S.single.price&&st.filled===0)h+='<div class="note info"><span>Вы указали единую цену <b class="num">'+fmt(S.single.price)+' '+curSuf()+'</b>. Заполнить ею все варианты и поправить только отличия?</span><span class="spacer"></span><button type="button" class="btn sm" data-act="prefill">Заполнить все</button></div>';
+  h+=(S.view==="matrix"&&ids.length>=2)?matrix(vs,ids):table(vs,ids);
+  h+=discountBlock();
+  h+='<div class="row"><button type="button" class="btn soft" data-act="istep" data-v="1">← Изменить варианты</button><span class="spacer"></span><button type="button" class="btn pri" data-act="istep" data-v="3">Далее: проверка →</button></div>';
+  return h;
+}
+function groupOrder(ids){var g=ids.indexOf(S.groupBy)>-1?S.groupBy:ids[0];return [g].concat(ids.filter(function(x){return x!==g;}));}
+function table(vs,ids,compact){
+  var E=errMap(),order=groupOrder(ids),g=order[0];
+  var groups={};var gvals=charById(g).values.map(function(x){return x.v;}).filter(function(v){return S.chars[g].indexOf(v)>-1;});
+  vs.forEach(function(v){var gv=v.parts.filter(function(p){return p.c===g;})[0].v;(groups[gv]=groups[gv]||[]).push(v);});
+  var selN=Object.keys(S.sel).filter(function(k){return S.sel[k];}).length;
+  var h='';
+  if(!compact&&ids.length>1)h+='<div class="row"><span class="flab">Группировать по</span><div class="seg sm" role="group" aria-label="Группировка">'+ids.map(function(id){return '<button type="button" class="'+(g===id?"on":"")+'" data-act="group" data-v="'+id+'">'+charById(id).name.split(" (")[0]+'</button>';}).join("")+'</div></div>';
+  h+='<div class="tscroll"><table class="vt'+(compact?" cmp":"")+'"><thead><tr>'+(compact?"":'<th style="width:34px"><input type="checkbox" aria-label="Выбрать все" data-act="selAll"'+(selN&&selN===vs.length?" checked":"")+'></th>')+'<th>Вариант</th><th>В продаже</th><th class="w-price">Цена</th><th class="w-moq">Мин. заказ</th><th>Покупатель видит</th></tr></thead><tbody>';
+  gvals.forEach(function(gv){
+    var rows=groups[gv]||[];var onN=rows.filter(function(v){return v.d.on;}).length;
+    h+='<tr class="grp"><td colspan="'+(compact?5:6)+'"><div class="row">'+swatch(g,gv)+'<b>'+esc(gv)+'</b><small style="color:var(--muted)">'+rows.length+' '+plural(rows.length,"вариант","варианта","вариантов")+(onN<rows.length?", "+(rows.length-onN)+" не в продаже":"")+'</small>'+(compact||rows.length<2?"":'<span class="spacer"></span><span class="ginp">Цена для всей группы <span class="inp"><input inputmode="numeric" placeholder="0" data-gprice="'+esc(gv)+'" aria-label="Цена для группы '+esc(gv)+'"><span class="suf">'+curSuf()+'</span></span><button type="button" class="btn sm" data-act="gapply" data-v="'+esc(gv)+'">Применить</button></span>')+'</div></td></tr>';
+    rows.forEach(function(v){
+      var kp="v:"+v.key+":price",km="v:"+v.key+":moq";var rest=v.parts.filter(function(p){return p.c!==g;});
+      h+='<tr class="'+(v.d.on?"":"off")+(S.sel[v.key]?" sel":"")+'" data-row="'+esc(v.key)+'">'+(compact?"":'<td><input type="checkbox" aria-label="Выбрать '+esc(vlabel(v))+'" data-act="sel" data-v="'+esc(v.key)+'"'+(S.sel[v.key]?" checked":"")+'></td>')+
+        '<td><div class="vname">'+(rest.length?rest.map(function(p){return '<span class="vtag">'+swatch(p.c,p.v)+esc(p.v)+'</span>';}).join(""):'<span class="vtag">'+swatch(g,gv)+esc(gv)+'</span>')+'</div></td>'+
+        '<td><button type="button" class="tog'+(v.d.on?" on":"")+'" role="switch" aria-checked="'+v.d.on+'" aria-label="В продаже: '+esc(vlabel(v))+'" data-act="tog" data-v="'+esc(v.key)+'"></button></td>';
+      if(v.d.on){
+        h+='<td>'+money(kp,v.d.price,{id:"in-"+kp,aria:"Цена: "+vlabel(v)})+(S.currency!=="UZS"?'<div class="eq" data-derived="eq:'+esc(v.key)+'">'+(v.d.price?"≈ "+fmt(toUzs(v.d.price))+" сум":"")+'</div>':"")+'<div class="err" data-err="'+esc(kp)+'">'+(E[kp]||"")+'</div></td>'+
+          '<td>'+money(km,v.d.moq,{suf:"шт.",id:"in-"+km,aria:"Мин. заказ: "+vlabel(v)})+'<div class="err" data-err="'+esc(km)+'">'+(E[km]||"")+'</div></td>'+
+          '<td class="num" data-derived="fin:'+esc(v.key)+'">'+buyerSees(v.d.price)+'</td>';
+      }else h+='<td colspan="3" style="color:var(--muted)">Не в продаже — покупатель не сможет выбрать этот вариант</td>';
+      h+='</tr>';
+    });
+  });
+  h+='</tbody></table></div>';
+  if(!compact&&selN)h+='<div class="bulk" role="region" aria-label="Действия с выбранными"><b>Выбрано: '+selN+'</b><span class="inp"><input id="bulk-price" inputmode="numeric" placeholder="Цена" aria-label="Цена для выбранных"><span class="suf">'+curSuf()+'</span></span><span class="inp"><input id="bulk-moq" inputmode="numeric" placeholder="Мин. заказ" aria-label="Мин. заказ для выбранных"><span class="suf">шт.</span></span><button type="button" class="btn pri sm" data-act="bulkApply">Применить</button><button type="button" class="btn sm" data-act="bulkOff">Убрать из продажи</button><button type="button" class="btn sm" data-act="bulkOn">Вернуть в продажу</button><span class="spacer"></span><button type="button" class="btn sm" data-act="bulkClear">Снять выбор</button></div>';
+  return h;
+}
+function buyerSees(p){if(!p)return '<span style="color:var(--muted)">—</span>';var f=final(p);return fmt(toUzs(f))+' сум'+(f!==p?' <s style="color:var(--muted)">'+fmt(toUzs(p))+'</s>':"");}
+function matrix(vs,ids){
+  var E=errMap(),order=groupOrder(ids),rc=order[0],cc=order[1],third=order[2];
+  var rv=charById(rc).values.map(function(x){return x.v;}).filter(function(v){return S.chars[rc].indexOf(v)>-1;});
+  var cv=charById(cc).values.map(function(x){return x.v;}).filter(function(v){return S.chars[cc].indexOf(v)>-1;});
+  var tv=third?charById(third).values.map(function(x){return x.v;}).filter(function(v){return S.chars[third].indexOf(v)>-1;}):[];
+  if(third&&tv.indexOf(S.mxTab)<0)S.mxTab=tv[0];
+  var byKey={};vs.forEach(function(v){var m={};v.parts.forEach(function(p){m[p.c]=p.v;});byKey[[m[rc],m[cc],third?m[third]:""].join("¦")]=v;});
+  var metric=S.mxMetric;
+  var h='<div class="row"><span class="flab">Строки</span><div class="seg sm">'+ids.slice(0,ids.length).map(function(id){return '<button type="button" class="'+(rc===id?"on":"")+'" data-act="group" data-v="'+id+'">'+charById(id).name.split(" (")[0]+'</button>';}).join("")+'</div><span class="spacer"></span><span class="flab">Показать</span><div class="seg sm"><button type="button" class="'+(metric==="price"?"on":"")+'" data-act="metric" data-v="price">Цена</button><button type="button" class="'+(metric==="moq"?"on":"")+'" data-act="metric" data-v="moq">Мин. заказ</button></div></div>';
+  if(third)h+='<div class="tabs"><span class="flab" style="align-self:center">'+charById(third).name+':</span>'+tv.map(function(t){return '<button type="button" class="chip'+(S.mxTab===t?" on":"")+'" data-act="mxtab" data-v="'+esc(t)+'">'+esc(t)+'</button>';}).join("")+'</div>';
+  var suf=metric==="price"?curSuf():"шт.";
+  h+='<div class="tscroll"><table class="mx"><thead><tr><th>'+charById(rc).name.split(" (")[0]+' ↓ / '+charById(cc).name+' →</th>'+cv.map(function(c){return '<th><div class="hd">'+swatch(cc,c)+esc(c)+'</div><div class="mini"><span class="inp"><input inputmode="numeric" placeholder="весь столбец" data-mxcol="'+esc(c)+'" aria-label="Значение для столбца '+esc(c)+'"></span><button type="button" class="btn sm" data-act="mxcol" data-v="'+esc(c)+'" aria-label="Применить к столбцу">↓</button></div></th>';}).join("")+'</tr></thead><tbody>';
+  rv.forEach(function(r){
+    h+='<tr><th><div class="hd">'+swatch(rc,r)+esc(r)+'</div><div class="mini"><span class="inp"><input inputmode="numeric" placeholder="вся строка" data-mxrow="'+esc(r)+'" aria-label="Значение для строки '+esc(r)+'"></span><button type="button" class="btn sm" data-act="mxrow" data-v="'+esc(r)+'" aria-label="Применить к строке">→</button></div></th>';
+    cv.forEach(function(c){
+      var v=byKey[[r,c,third?S.mxTab:""].join("¦")];if(!v){h+='<td></td>';return;}
+      if(!v.d.on){h+='<td class="off"><div>Не в продаже</div><button type="button" class="linkbtn" data-act="tog" data-v="'+esc(v.key)+'">Вернуть</button></td>';return;}
+      var k="v:"+v.key+":"+metric;
+      h+='<td><div class="cell">'+money(k,v.d[metric],{suf:suf,id:"in-"+k,aria:(metric==="price"?"Цена: ":"Мин. заказ: ")+vlabel(v)})+'<button type="button" class="xbtn" title="Нет в продаже" aria-label="Убрать из продажи: '+esc(vlabel(v))+'" data-act="tog" data-v="'+esc(v.key)+'">✕</button></div>'+(metric==="price"&&S.currency!=="UZS"?'<div class="eq" data-derived="eq:'+esc(v.key)+'">'+(v.d.price?"≈ "+fmt(toUzs(v.d.price))+" сум":"")+'</div>':"")+'<div class="err" data-err="'+esc(k)+'">'+(E[k]||"")+'</div></td>';
+    });
+    h+='</tr>';
+  });
+  h+='</tbody></table></div><div class="note info">Строка — '+charById(rc).name.split(" (")[0].toLowerCase()+', столбец — '+charById(cc).name.toLowerCase()+'. Каждая ячейка — один вариант: например, «'+esc(rv[0])+' · '+esc(cv[0])+'». ✕ — варианта нет в продаже.</div>';
+  return h;
+}
+
+/* step 3: review */
+function reviewStep(){
+  var vs=combos(),ids=activeChars(),on=vs.filter(function(v){return v.d.on;});
+  var prices=on.filter(function(v){return v.d.price;}).map(function(v){return toUzs(final(v.d.price));});
+  var moqs=on.map(function(v){return v.d.moq||1;});
+  var missing=on.filter(function(v){return !v.d.price;}).length;
+  var h='<div class="rv"><div style="display:flex;flex-direction:column;gap:14px;min-width:0">';
+  h+='<div class="stats"><div class="stat"><small>В продаже</small><b>'+on.length+' из '+vs.length+'</b></div><div class="stat"><small>Цены для покупателя</small><b>'+(prices.length?fmt(Math.min.apply(null,prices))+(Math.max.apply(null,prices)!==Math.min.apply(null,prices)?" – "+fmt(Math.max.apply(null,prices)):"")+" сум":"—")+'</b></div><div class="stat"><small>Мин. заказ</small><b>'+(moqs.length?Math.min.apply(null,moqs)+(Math.max.apply(null,moqs)!==Math.min.apply(null,moqs)?"–"+Math.max.apply(null,moqs):"")+" шт.":"—")+'</b></div><div class="stat"><small>Без цены</small><b style="color:'+(missing?"var(--red)":"inherit")+'">'+missing+'</b></div></div>';
+  var W=warnings(on);
+  if(W.length||missing)h+='<div class="warns">'+(missing?'<div class="note warn"><span><b>'+missing+' '+plural(missing,"вариант","варианта","вариантов")+' без цены.</b> Укажите цену прямо в таблице ниже или уберите вариант из продажи.</span></div>':"")+W.map(function(w){return '<div class="note warn"><span>'+w+' <span class="flag">⚑ подсказка</span></span></div>';}).join("")+'</div>';
+  else h+='<div class="note ok">Все варианты в продаже имеют цену. Проверьте таблицу — её можно править прямо здесь.</div>';
+  h+='</div>'+buyerPreview(vs,ids)+'</div>';
+  h+='<span class="flab">Итоговая таблица — можно править здесь</span>'+table(vs,ids,true);
+  h+='<div class="row"><button type="button" class="btn soft" data-act="istep" data-v="2">← К ценам</button><button type="button" class="btn soft" data-act="istep" data-v="1">Изменить варианты</button></div>';
+  return h;
+}
+function warnings(on){
+  var W=[];
+  var mem=charById("mem").values.map(function(x){return x.v;});
+  on.forEach(function(a){on.forEach(function(b){
+    if(a===b||!a.d.price||!b.d.price)return;
+    var am=a.parts.filter(function(p){return p.c==="mem";})[0],bm=b.parts.filter(function(p){return p.c==="mem";})[0];if(!am||!bm)return;
+    var sameRest=a.parts.every(function(p){return p.c==="mem"||b.parts.some(function(q){return q.c===p.c&&q.v===p.v;});});
+    if(sameRest&&mem.indexOf(am.v)>mem.indexOf(bm.v)&&a.d.price<b.d.price)W.push("«"+esc(vlabel(a))+"» дешевле, чем «"+esc(vlabel(b))+"», хотя памяти больше. Это верно?");
+  });});
+  var ps=on.filter(function(v){return v.d.price;}).map(function(v){return v.d.price;}).sort(function(x,y){return x-y;});
+  if(ps.length>2){var med=ps[Math.floor(ps.length/2)];on.forEach(function(v){if(v.d.price&&(v.d.price>med*5||v.d.price<med/5))W.push("Цена «"+esc(vlabel(v))+"» ("+fmt(v.d.price)+" "+curSuf()+") сильно отличается от остальных. Нет ли лишнего нуля?");});}
+  return W.slice(0,3);
+}
+function buyerPreview(vs,ids){
+  var on=vs.filter(function(v){return v.d.on&&v.d.price;});
+  ids.forEach(function(id){if(S.chars[id].indexOf(S.pv[id])<0)S.pv[id]=null;});
+  var pick=vs.filter(function(v){return v.parts.every(function(p){return S.pv[p.c]===p.v;});})[0];
+  var minP=on.length?Math.min.apply(null,on.map(function(v){return toUzs(final(v.d.price));})):null;
+  var h='<div class="pv" aria-label="Так увидит покупатель"><span class="eyb">Так увидит покупатель</span><div class="pimg"><i></i></div><h4>Samsung Galaxy A55 5G</h4>';
+  if(pick&&pick.d.on&&pick.d.price){var f=toUzs(final(pick.d.price)),o=toUzs(pick.d.price);h+='<div class="pprice">'+fmt(f)+' сум'+(f!==o?'<s>'+fmt(o)+'</s>':"")+'</div><small style="color:var(--muted)">Мин. заказ: '+pick.d.moq+' шт.</small>';}
+  else h+='<div class="pprice">'+(minP!=null?"от "+fmt(minP)+" сум":"—")+'</div><small style="color:var(--muted)">Выберите вариант, чтобы увидеть точную цену</small>';
+  ids.forEach(function(id){
+    var vals=charById(id).values.map(function(x){return x.v;}).filter(function(v){return S.chars[id].indexOf(v)>-1;});
+    h+='<div class="popt"><small>'+charById(id).name.split(" (")[0]+'</small><div class="chips">'+vals.map(function(v){
+      var test={};ids.forEach(function(i){test[i]=S.pv[i];});test[id]=v;
+      var avail=vs.some(function(x){return x.d.on&&x.parts.every(function(p){return test[p.c]==null||test[p.c]===p.v;});});
+      return '<button type="button" class="chip'+(S.pv[id]===v?" pick":"")+(avail?"":" dis")+'" data-act="pv" data-c="'+id+'" data-v="'+esc(v)+'"'+(avail?"":' aria-disabled="true"')+'>'+swatch(id,v)+esc(v)+'</button>';}).join("")+'</div></div>';
+  });
+  h+='<button type="button" class="btn pri" style="justify-content:center">Добавить в корзину</button><small style="color:var(--muted)">Зачёркнутые значения — сочетаний нет в продаже.</small></div>';
+  return h;
+}
+
+/* ----- range ----- */
+function rangeBox(){
+  var E=errMap(),t=S.tiers;
+  var h='<div class="box"><div class="note info">Цены только в сумах. Диапазоны одинаковы для всех вариантов товара. Нужны разные цены по вариантам — выберите «Фиксированная цена → Разная цена по вариантам».</div>';
+  h+='<div class="f'+(E.tiers?" bad":"")+'" data-f="tiers"><span class="flab">Диапазоны количества</span><span class="sub">Первое «от» — это минимальный заказ. «До» каждого диапазона задаёте вы; следующий начинается автоматически. Последний диапазон — «и больше».</span><span class="err" data-err="tiers">'+(E.tiers||"")+'</span></div>';
+  h+='<div class="tierhead"><span></span><span>От, шт.</span><span></span><span>До, шт.</span><span>Цена за шт.</span><span>Экономия</span><span></span></div><div class="tiers">';
+  t.forEach(function(r,i){
+    var last=i===t.length-1;var sv=(i>0&&t[0].price&&r.price&&r.price<t[0].price)?Math.round((1-r.price/t[0].price)*100):null;
+    h+='<div class="tier"><span class="no">'+(i+1)+'</span>'+
+      '<div>'+(i===0?money("t0.from",r.from,{suf:"шт.",aria:"Диапазон 1 от"}):'<div class="inp ro"><input readonly value="'+fmt(r.from)+'" aria-label="Диапазон '+(i+1)+' от" data-derived="from'+i+'"><span class="suf">шт.</span></div>')+'<div class="err" data-err="t'+i+'.from">'+(E["t"+i+".from"]||"")+'</div>'+(i===0?'<div class="eq">= минимальный заказ</div>':"")+'</div>'+
+      '<span class="dash">–</span>'+
+      '<div class="td">'+(last?'<div class="inp ro"><input readonly value="и больше" aria-label="Последний диапазон без верхней границы"></div>':money("t"+i+".to",r.to,{suf:"шт.",aria:"Диапазон "+(i+1)+" до"}))+'<div class="err" data-err="t'+i+'.to">'+(E["t"+i+".to"]||"")+'</div></div>'+
+      '<div class="tp">'+money("t"+i+".price",r.price,{suf:"сум",aria:"Диапазон "+(i+1)+" цена"})+'<div class="err" data-err="t'+i+'.price">'+(E["t"+i+".price"]||"")+'</div></div>'+
+      '<div class="sv" data-derived="sv'+i+'">'+(sv?'<span class="save">−'+sv+' %</span>':"")+'</div>'+
+      '<div>'+(t.length>2?'<button type="button" class="xbtn" aria-label="Удалить диапазон '+(i+1)+'" data-act="tierDel" data-v="'+i+'">✕</button>':"")+'</div></div>';
+  });
+  h+='</div><div class="row">'+(t.length<5?'<button type="button" class="btn soft sm" data-act="tierAdd">+ Добавить диапазон</button>':'<span class="sub" style="color:var(--muted)">Максимум 5 диапазонов</span>')+'</div>';
+  h+=ladder();
+  h+=discountBlock();
+  h+='<div class="rv"><div style="display:flex;flex-direction:column;gap:12px;min-width:0">'+calc()+'<div class="note prop"><span><span class="flag">⚑ предложение</span> Варианты (цвет, память) для «по диапазонам» выбираются так же, как в шаге «Что отличается», но без своей цены: только наличие. Не нарисовано в этом прототипе.</span></div></div>'+rangePreview()+'</div>';
+  return h+'</div>';
+}
+function ladder(){
+  var t=S.tiers;var cols=["#d9f0dd","#bfe6c6","#a2d9ad","#86cc95","#6abf7d"];
+  return '<div><span class="flab">Как это выглядит по количеству</span><div class="ladder" style="margin-top:6px" aria-hidden="true">'+t.map(function(r,i){return '<div style="flex:1;background:'+cols[i]+'">'+fmt(r.from)+(r.to?"–"+fmt(r.to):"+")+' · '+(r.price?fmt(r.price):"?")+'</div>';}).join("")+'</div></div>';
+}
+function tierFor(q){var t=S.tiers;for(var i=t.length-1;i>=0;i--){if(t[i].from!=null&&q>=t[i].from)return i;}return -1;}
+function calcRes(){
+  var q=S.calcQty||0,i=tierFor(q),t=S.tiers;
+  var p=i>-1?t[i].price:null,f=p&&S.disc.kind==="pct"&&S.disc.value?Math.round(p*(1-S.disc.value/100)):p;
+  var nxt=i>-1&&i<t.length-1?t[i+1]:null;
+  if(i<0)return '<b style="color:var(--red)">меньше минимального заказа ('+fmt(t[0].from)+' шт.)</b>';
+  if(!f)return '<b>укажите цену диапазона '+(i+1)+'</b>';
+  return '<b class="num">'+fmt(f)+' сум/шт., итого '+fmt(f*q)+' сум</b>'+(nxt&&nxt.price&&nxt.from?'<span class="sub" style="color:var(--muted)">Подсказка покупателю: «Добавьте ещё '+fmt(nxt.from-q)+' шт. — цена '+fmt(nxt.price)+' сум за шт.»</span>':"");
+}
+function calc(){
+  return '<div class="calc"><span class="flab">Проверка:</span><span>покупатель берёт</span><span class="inp"><input id="calc-q" inputmode="numeric" data-k="calcQty" value="'+fmt(S.calcQty)+'" aria-label="Количество для проверки"><span class="suf">шт.</span></span><span>→</span><span class="row" data-derived="calcres">'+calcRes()+'</span></div>';
+}
+function rangePreview(){
+  var t=S.tiers,i=tierFor(S.calcQty||0);
+  return '<div class="pv"><span class="eyb">Так увидит покупатель</span><div class="pimg"><i></i></div><h4>Samsung Galaxy A55 5G</h4><div class="pprice">от '+fmt(Math.min.apply(null,t.map(function(r){return r.price||Infinity;})))+' сум</div><small style="color:var(--muted)">Мин. заказ: '+fmt(t[0].from)+' шт.</small><div class="tierlist">'+t.map(function(r,j){return '<div class="'+(j===i?"hit":"")+'"><span>'+fmt(r.from)+(r.to?" – "+fmt(r.to):"+")+' шт.</span><span>'+(r.price?fmt(r.price)+" сум":"—")+'</span></div>';}).join("")+'</div><button type="button" class="btn pri" style="justify-content:center">Добавить в корзину</button></div>';
+}
+
+/* ----- negotiable ----- */
+function negBox(){
+  var h='<div class="box"><div class="note info">Цена не показывается в каталоге и на странице товара. Вместо «Добавить в корзину» покупатель видит «Написать продавцу». Договорились — вы отправляете в чат предложение цены, покупатель принимает и оплачивает его как обычный заказ.</div>';
+  h+='<div class="grid2">'+field("neg.moq","Минимальный заказ (необязательно)",money("neg.moq",S.neg.moq,{suf:"шт.",ph:"не указан",aria:"Минимальный заказ"}),"Покажем покупателю: «Мин. заказ: N шт.»")+'</div>';
+  h+='<div class="note prop" style="flex-direction:column;gap:8px"><span><span class="flag">⚑ предложение BA</span> Ориентир цены. Покупатели чаще пишут, когда видят порядок цены.</span><label class="row"><input type="checkbox" data-act="hintOn"'+(S.neg.hintOn?" checked":"")+'> Показывать «от … сум за шт.»</label>'+(S.neg.hintOn?'<div style="max-width:280px">'+money("neg.hint",S.neg.hint,{suf:"сум",aria:"Ориентир цены"})+'</div>':"")+'</div>';
+  h+='<div class="rv"><div class="note prop"><span><span class="flag">⚑ предложение BA</span> Варианты (цвет, память) — только наличие, без цен; покупатель указывает нужный вариант в запросе. Не нарисовано в этом прототипе.</span></div>';
+  h+='<div class="pv"><span class="eyb">Так увидит покупатель</span><div class="pimg"><i></i></div><h4>Samsung Galaxy A55 5G</h4><div class="pprice">Договорная цена</div>'+(S.neg.hintOn&&S.neg.hint?'<small style="color:var(--muted)">Ориентир: от '+fmt(S.neg.hint)+' сум за шт.</small>':"")+(S.neg.moq?'<small style="color:var(--muted)">Мин. заказ: '+fmt(S.neg.moq)+' шт.</small>':"")+'<button type="button" class="btn pri" style="justify-content:center">Запросить цену</button><button type="button" class="btn" style="justify-content:center">Написать продавцу</button></div></div>';
+  return h+'</div>';
+}
+
+/* ---------- layer: modal / toast ---------- */
+function renderLayer(){
+  var L=document.getElementById("layer"),h="";
+  if(S.modal){
+    h='<div class="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt"><h3 id="mt">Сменить тип цены на «'+S.modal.label+'»?</h3><p style="margin:0;color:var(--ink-2)">Товар уже опубликован. После сохранения:</p><ul><li>в корзинах покупателей цена изменится при следующем открытии</li>'+(S.modal.to==="neg"?"<li>товар нельзя будет купить из корзины — покупатель увидит «Цена договорная, напишите продавцу»</li>":"")+'<li>заказы, которые уже оплачены, не изменятся</li><li>текущие цены «'+S.modal.fromLabel+'» не сохранятся</li></ul><div class="row"><span class="spacer"></span><button type="button" class="btn" data-act="modalNo">Отмена</button><button type="button" class="btn pri" data-act="modalYes">Сменить тип</button></div></div></div>';
+  }
+  if(S.ownM)h+=ownModal();
+  if(S.toast)h+='<div class="toast" role="status">'+S.toast+'</div>';
+  L.innerHTML=h;
+}
+/* own value dialog (v0.4) */
+function ownCheck(M){var b=baseChar(M.field),t=M.text.trim(),ms=matchIn(b.values,t),mo=matchIn(S.own[M.field],t);
+  if(!t)return {err:"Введите значение"};if(M.text.length>OWN_MAX)return {err:"Не больше "+OWN_MAX+" символов"};
+  if(ms&&ms.kind==="ex")return {err:"Такое значение уже есть в списке — выберите его",ms:ms};if(mo&&mo.kind==="ex")return {err:"У вас уже есть это значение",mo:mo};return {ms:ms,mo:mo};}
+function ownModal(){var M=S.ownM,b=baseChar(M.field),R=ownCheck(M),err=M.showErr?R.err:"",mh="",nm=b.name.split(" (")[0];
+  if(M.text.trim()){
+    if(R.ms&&R.ms.kind==="ex")mh='<div class="match ex">В списке уже есть <b>«'+esc(R.ms.item.v)+'»</b>.<button type="button" class="btn sm" data-act="oPick" data-v="'+esc(R.ms.item.v)+'">Выбрать его</button></div>';
+    else if(R.mo&&R.mo.kind==="ex")mh='<div class="match ex">У вас уже есть <b>«'+esc(R.mo.item.v)+'»</b>.<button type="button" class="btn sm" data-act="oPick" data-v="'+esc(R.mo.item.v)+'">Выбрать его</button></div>';
+    else if(R.ms&&R.ms.kind==="sim")mh='<div class="match sim">Похоже на <b>«'+esc(R.ms.item.v)+'»</b> из общего списка.<button type="button" class="btn sm" data-act="oPick" data-v="'+esc(R.ms.item.v)+'">Выбрать «'+esc(R.ms.item.v)+'»</button>'+'</div>';}
+  var link='<div class="note info"><span>Своё значение покупатель увидит на странице товара. В фильтрах каталога его нет — там только общий список.'+(FILTERABLE[M.field]?' Если важно, чтобы товар находили через фильтр «'+esc(nm)+'», выберите значение из списка.':'')+'</span></div>';
+  var ph=M.field==="color"?"Например, Космический серый":M.field==="mem"?"Например, 16/1 ТБ":"Например, С чехлом и стеклом";
+  return '<div class="scrim" data-act="oScrim"><div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="ot"><h3 id="ot">Своё значение · '+esc(nm)+'</h3>'+
+    '<p style="margin:0;color:var(--ink-2)">Значение увидите только вы: в этом и в других своих товарах. Другие продавцы его не видят, одобрять его не нужно.</p>'+
+    '<div class="f'+(err?" bad":"")+'"><label for="o-text">Значение *</label><div class="inp'+(err?" bad":"")+'"><input id="o-text" data-o="text" value="'+esc(M.text)+'" maxlength="60" autocomplete="off" placeholder="'+ph+'"></div><span class="sub">'+M.text.length+' / '+OWN_MAX+'</span><span class="err">'+(err||"")+'</span></div>'+(mh?'<div>'+mh+'</div>':"")+
+    (M.field==="color"?'<div class="f"><label for="o-c">Цвет образца</label><div class="row"><input type="color" id="o-c" data-o="c" value="'+esc(M.c)+'"><span class="sub">Кружок рядом с названием на странице товара</span></div></div>':"")+
+    link+
+    (M.uzOpen?'<div class="f"><label for="o-uz">O‘zbekcha</label><div class="inp"><input id="o-uz" data-o="uz" value="'+esc(M.uz)+'" maxlength="40"></div><span class="sub">Если не заполнить, на узбекском покажется значение как написано выше.</span></div>':'<div class="row"><button type="button" class="linkbtn" data-act="oUz">+ Название на узбекском</button><span class="sub">Без перевода значение покажется как написано, на всех языках.</span></div>')+
+    '<div class="row"><span class="spacer"></span><button type="button" class="btn" data-act="oClose">Отмена</button><button type="button" class="btn pri" data-act="oSave">Добавить</button></div></div></div>';}
+function ownOpen(field,text,link){S.ownM={field:field,text:text||"",uz:"",uzOpen:false,link:link||"",c:"#5b5f66",showErr:false};}
+function oFocus(sel){setTimeout(function(){var el=document.querySelector(sel);if(el){el.focus();var n=(el.value||"").length;try{el.setSelectionRange(n,n);}catch(e){}}},0);}
+var tTimer;function toast(msg){S.toast=msg;renderLayer();clearTimeout(tTimer);tTimer=setTimeout(function(){S.toast=null;renderLayer();},3200);}
+
+/* ---------- events ---------- */
+var TYPE_LABEL={fixed:"Фиксированная цена",range:"Цена по диапазонам",neg:"Договорная цена"};
+function setType(t){S.type=t;S.showErr=false;render();}
+document.addEventListener("click",function(e){
+  var go=e.target.closest("[data-go]");
+  if(go){var k=go.getAttribute("data-go");
+    if(k.indexOf("v:")===0&&S.type==="fixed"&&S.mode==="multi"&&S.istep===1){S.istep=2;render();}
+    if(k.indexOf("v:")===0&&S.view==="matrix"&&S.istep===2){var mk=k.split(":").pop();if(mk!==S.mxMetric){S.mxMetric=mk;}var key=k.slice(2,k.lastIndexOf(":"));var th=S.charOrder.filter(function(id){return S.chars[id].length;})[2];if(th){var pt=key.split(" | ");S.mxTab=pt[activeChars().indexOf(th)];}render();}
+    var el=document.getElementById("in-"+k)||document.querySelector('[data-f="'+k.replace(/"/g,"")+'"]');if(el){el.scrollIntoView({block:"center",behavior:"smooth"});if(el.focus)el.focus({preventScroll:true});}return;}
+  var b=e.target.closest("[data-act]");if(!b)return;
+  var a=b.getAttribute("data-act"),v=b.getAttribute("data-v");
+  if(a==="type"){if(v===S.type)return;if(S.live){S.modal={to:v,label:TYPE_LABEL[v],fromLabel:TYPE_LABEL[S.type]};renderLayer();return;}setType(v);return;}
+  if(a==="oScrim"){if(e.target===b){S.ownM=null;renderLayer();}return;}
+  if(a==="ownAdd"){ownOpen(v);renderLayer();oFocus("#o-text");return;}
+  if(a==="oClose"){S.ownM=null;renderLayer();return;}
+  if(a==="oUz"){S.ownM.uzOpen=true;renderLayer();oFocus("#o-uz");return;}
+  if(a==="oLink"){S.ownM.link=v;renderLayer();return;}
+  if(a==="oPick"){var of=S.ownM.field;if(S.chars[of].indexOf(v)<0)S.chars[of].push(v);S.justAdded=v;S.ownM=null;render();toast("Выбрано значение «"+v+"»");return;}
+  if(a==="oSave"){var M=S.ownM;M.showErr=true;var R=ownCheck(M);if(R.err){renderLayer();oFocus("#o-text");return;}
+    var nv={v:M.text.trim(),own:true,uz:M.uz.trim()};if(M.field==="color")nv.c=M.c;S.own[M.field].push(nv);S.chars[M.field].push(nv.v);S.justAdded=nv.v;S.ownM=null;render();
+    toast("Своё значение «"+nv.v+"» добавлено и выбрано. Его видите только вы.");return;}
+  if(a==="modalNo"){S.modal=null;renderLayer();return;}
+  if(a==="modalYes"){var to=S.modal.to;S.modal=null;setType(to);toast("Тип цены изменён. Сохранится после «Продолжить».");return;}
+  if(a==="mode"){S.mode=v;S.showErr=false;render();return;}
+  if(a==="cur"){S.currency=v;render();return;}
+  if(a==="istep"){var n=+v;if(n>1&&combos().length<2){S.showErr=true;render();return;}S.istep=n;render();window.scrollTo({top:root.getBoundingClientRect().top+window.scrollY-120,behavior:"smooth"});return;}
+  if(a==="charOn"){if(S.chars[v].length||S["open_"+v]){S.chars[v]=[];S["open_"+v]=false;}else S["open_"+v]=true;render();return;}
+  if(a==="charAll"){S.chars[v]=charById(v).values.map(function(x){return x.v;});render();return;}
+  if(a==="val"){var c=b.getAttribute("data-c"),arr=S.chars[c],i=arr.indexOf(v);if(i>-1)arr.splice(i,1);else arr.push(v);S.justAdded=null;render();return;}
+  if(a==="view"){S.view=v;render();return;}
+  if(a==="group"){S.groupBy=v;render();return;}
+  if(a==="metric"){S.mxMetric=v;render();return;}
+  if(a==="mxtab"){S.mxTab=v;render();return;}
+  if(a==="tog"){S.vars[v].on=!S.vars[v].on;render();return;}
+  if(a==="sel"){S.sel[v]=!S.sel[v];render();return;}
+  if(a==="selAll"){var all=combos(),allOn=all.every(function(x){return S.sel[x.key];});S.sel={};if(!allOn)all.forEach(function(x){S.sel[x.key]=true;});render();return;}
+  if(a==="bulkApply"){var bp=parse(document.getElementById("bulk-price").value),bm=parse(document.getElementById("bulk-moq").value),cnt=0;Object.keys(S.sel).forEach(function(k){if(!S.sel[k])return;if(bp)S.vars[k].price=bp;if(bm)S.vars[k].moq=bm;cnt++;});S.sel={};render();toast("Обновлено вариантов: "+cnt);return;}
+  if(a==="bulkOff"||a==="bulkOn"){Object.keys(S.sel).forEach(function(k){if(S.sel[k])S.vars[k].on=(a==="bulkOn");});S.sel={};render();return;}
+  if(a==="bulkClear"){S.sel={};render();return;}
+  if(a==="gapply"){var inp=document.querySelector('[data-gprice="'+v.replace(/"/g,"")+'"]'),p=parse(inp&&inp.value);if(!p)return;var g=groupOrder(activeChars())[0];combos().forEach(function(x){if(x.d.on&&x.parts.some(function(q){return q.c===g&&q.v===v;}))x.d.price=p;});render();toast("Цена применена к группе «"+v+"»");return;}
+  if(a==="mxrow"||a==="mxcol"){var sel=a==="mxrow"?'[data-mxrow="':'[data-mxcol="';var mi=document.querySelector(sel+v.replace(/"/g,"")+'"]'),mv=parse(mi&&mi.value);if(!mv)return;var ord=groupOrder(activeChars()),ch=a==="mxrow"?ord[0]:ord[1],th3=ord[2];combos().forEach(function(x){if(!x.d.on)return;if(!x.parts.some(function(q){return q.c===ch&&q.v===v;}))return;if(th3&&!x.parts.some(function(q){return q.c===th3&&q.v===S.mxTab;}))return;x.d[S.mxMetric]=mv;});render();return;}
+  if(a==="prefill"){combos().forEach(function(x){if(x.d.on&&!x.d.price)x.d.price=S.single.price;});render();toast("Все варианты заполнены ценой "+fmt(S.single.price)+" "+curSuf());return;}
+  if(a==="pv"){if(b.getAttribute("aria-disabled"))return;var pc=b.getAttribute("data-c");S.pv[pc]=S.pv[pc]===v?null:v;render();return;}
+  if(a==="tierAdd"){var t=S.tiers,l=t[t.length-1];if(l.to==null)l.to=Math.max(l.from*2-1,l.from+1);t.push({from:l.to+1,to:null,price:null});render();return;}
+  if(a==="tierDel"){S.tiers.splice(+v,1);var tt=S.tiers;tt[tt.length-1].to=null;for(var j=1;j<tt.length;j++)tt[j].from=(tt[j-1].to||0)+1;render();return;}
+  if(a==="hintOn"){S.neg.hintOn=!S.neg.hintOn;render();return;}
+  if(a==="back"){if(S.type==="fixed"&&S.mode==="multi"&&S.istep>1){S.istep--;render();}return;}
+  if(a==="continue"){
+    if(S.type==="fixed"&&S.mode==="multi"&&S.istep<3){if(S.istep===1&&combos().length<2){S.showErr=true;render();return;}S.istep++;render();return;}
+    var E=validate();if(E.length){S.showErr=true;render();var eb=document.getElementById("ebanner");if(eb)eb.scrollIntoView({block:"start",behavior:"smooth"});return;}
+    S.showErr=false;render();toast("Цены сохранены. Следующий шаг — «Доставка»: остатки по филиалам.");return;}
+});
+document.addEventListener("input",function(e){
+  var t=e.target,o=t.getAttribute("data-o");
+  if(o&&S.ownM){if(o==="text"){S.ownM.text=t.value;S.ownM.showErr=false;var ps=t.selectionStart;renderLayer();var el=document.getElementById("o-text");if(el){el.focus();try{el.setSelectionRange(ps,ps);}catch(x){}}return;}
+    S.ownM[o]=t.value;if(o==="link")renderLayer();return;}
+  var k=t.getAttribute("data-k");if(!k)return;
+  if(k==="disc.kind")return;
+  var n=parse(t.value);
+  if(k==="single.price")S.single.price=n;else if(k==="single.moq")S.single.moq=n;
+  else if(k==="disc")S.disc.value=n;
+  else if(k==="calcQty")S.calcQty=n;
+  else if(k==="neg.moq")S.neg.moq=n;else if(k==="neg.hint")S.neg.hint=n;
+  else if(k.indexOf("v:")===0){var p=k.lastIndexOf(":"),key=k.slice(2,p),f=k.slice(p+1);if(S.vars[key])S.vars[key][f]=n;}
+  else if(/^t\d+\./.test(k)){var m=k.match(/^t(\d+)\.(\w+)$/),i=+m[1],fl=m[2];S.tiers[i][fl]=n;if(fl==="to"&&S.tiers[i+1])S.tiers[i+1].from=n==null?null:n+1;}
+  derived();
+});
+document.addEventListener("change",function(e){
+  var t=e.target;if(t.getAttribute("data-o")==="link"&&S.ownM){S.ownM.link=t.value;renderLayer();return;}
+  if(t.getAttribute("data-k")==="disc.kind"){S.disc.kind=t.value;S.disc.value=null;render();return;}
+});
+document.addEventListener("focusout",function(e){var t=e.target;if(t.matches&&t.matches("input[data-k]")&&!t.readOnly){var n=parse(t.value);t.value=fmt(n);}});
+function setD(sel,html){var el=document.querySelector('[data-derived="'+sel.replace(/"/g,"")+'"]');if(el){if(el.tagName==="INPUT")el.value=html;else el.innerHTML=html;}}
+function derived(){
+  if(S.type==="fixed"&&S.mode==="single"){setD("eq-single",S.single.price?fmt(toUzs(S.single.price))+" сум":"");var bl=document.querySelector('[data-derived="buyer-line"]');if(bl&&S.single.price)bl.textContent=fmt(toUzs(final(S.single.price)))+" сум";}
+  if(S.type==="fixed"&&S.mode==="multi"){var vs=combos(),st=stats(vs);setD("progtxt","Цены: "+st.filled+" из "+st.on);var pb=document.querySelector('[data-derived="progbar"]');if(pb)pb.style.width=(st.on?Math.round(st.filled/st.on*100):0)+"%";
+    vs.forEach(function(v){setD("fin:"+v.key,buyerSees(v.d.price));if(S.currency!=="UZS")setD("eq:"+v.key,v.d.price?"≈ "+fmt(toUzs(v.d.price))+" сум":"");});}
+  if(S.type==="range"){S.tiers.forEach(function(r,i){if(i>0)setD("from"+i,fmt(r.from));var sv=(i>0&&S.tiers[0].price&&r.price&&r.price<S.tiers[0].price)?Math.round((1-r.price/S.tiers[0].price)*100):null;setD("sv"+i,sv?'<span class="save">−'+sv+' %</span>':"");});
+    setD("calcres",calcRes());}
+  if(S.showErr){var m={};validate().forEach(function(x){if(!m[x.k])m[x.k]=x.msg;});
+    document.querySelectorAll("[data-err]").forEach(function(el){var k=el.getAttribute("data-err");el.textContent=m[k]||"";});
+    document.querySelectorAll("[data-wrap]").forEach(function(el){el.classList.toggle("bad",!!m[el.getAttribute("data-wrap")]);});
+    document.querySelectorAll("[data-f]").forEach(function(el){el.classList.toggle("bad",!!m[el.getAttribute("data-f")]);});}
+}
+
+/* ---------- scenarios ---------- */
+function filledPhone(){
+  S.type="fixed";S.mode="multi";S.chars.mem=["6/128 ГБ","8/256 ГБ","12/512 ГБ"];S.chars.color=["Белый","Чёрный","Голубой","Хаки"];combos();
+  var P={"6/128 ГБ":4380000,"8/256 ГБ":5150000,"12/512 ГБ":6200000};
+  combos().forEach(function(v){var m=v.parts[0].v,c=v.parts[1].v;v.d.price=P[m]+(c==="Хаки"?150000:0);v.d.moq=m==="12/512 ГБ"?2:1;});
+  S.vars["12/512 ГБ | Хаки"].on=false;
+}
+var SC=[
+ {id:"fixed-single",name:"1. Фиксированная · Единая цена",set:function(){},notes:[
+   "Matches the design, with three changes. «Количество на складе» becomes «Минимальный заказ, шт.» per PT3 (stock is per branch, entered in step «Доставка»).",
+   "«Эквивалентная валюта для сума» is renamed «Цена в сумах»: the old label is hard to read. For so‘m it simply repeats the price.",
+   "A one-line «Покупатель увидит» summary under the form shows the final price after discount and the MOQ, so the seller sees the result of the discount."]},
+ {id:"fixed-usd",name:"2. Фиксированная · Единая цена в USD со скидкой",set:function(){S.currency="USD";S.single.price=349;S.disc={kind:"pct",value:10};},notes:[
+   "The currency is picked once, as a segmented control above the price («сум / USD / EUR»), instead of a dropdown glued to the input. The design's dropdown is easy to miss.",
+   "The so‘m equivalent shows the rate and that it updates hourly (PT2, existing behaviour).",
+   "⚑ To confirm: one currency per product. The code stores a currency per variant; mixing USD and so‘m variants of one product is confusing for buyers."]},
+ {id:"multi-1-empty",name:"3. Разная цена · шаг 1, начало",set:function(){S.mode="multi";},notes:[
+   "The design's «Разная цена» lets the seller add rows and choose characteristic values per row. That causes the problems Akbar found: rows with different sets of characteristics, duplicate rows, and no way to see which combinations exist.",
+   "Proposal: the seller first says WHAT differs (characteristics and their values). The system builds every combination; the seller then only fills in prices. No duplicates or half-filled rows are possible.",
+   "Values come from the platform directory of characteristics, managed by the admin (prototype P-PT2: https://claude.ai/artifact/WK8Md2dcRRzTaZatzYjSUN). «+ Своё значение» adds a value only this seller sees, with no approval; it can be linked to a shared value so buyers still find the variant through the filter (decided 13.11.2026)."]},
+ {id:"multi-1-filled",name:"4. Разная цена · шаг 1, 3 × 4 = 12 вариантов",set:function(){S.mode="multi";S.chars.mem=["6/128 ГБ","8/256 ГБ","12/512 ГБ"];S.chars.color=["Белый","Чёрный","Голубой","Хаки"];},notes:[
+   "The counter shows the arithmetic (3 × 4 = 12) so the seller understands where the number comes from before entering prices.",
+   "Combinations that are not sold are switched off in step 2, not by removing values here. This keeps «Хаки» available for the memory sizes that do exist.",
+   "⚑ Limits to confirm with the tech lead: up to 3 characteristics, up to 100 variants (a warning above 60)."]},
+ {id:"multi-2-table",name:"5. Разная цена · шаг 2, таблица по группам",set:function(){S.mode="multi";S.istep=2;S.chars.mem=["6/128 ГБ","8/256 ГБ","12/512 ГБ"];S.chars.color=["Белый","Чёрный","Голубой","Хаки"];combos();["Белый","Чёрный","Голубой","Хаки"].forEach(function(c){S.vars["6/128 ГБ | "+c].price=4380000;});S.vars["8/256 ГБ | Белый"].price=5150000;S.vars["12/512 ГБ | Хаки"].on=false;},notes:[
+   "One row = one variant; every row names its full combination, so «128 ГБ · Белый» is never ambiguous.",
+   "Rows are grouped by the first characteristic. Each group has «Цена для всей группы» because prices usually follow memory, not colour. «Группировать по» switches the grouping.",
+   "Progress «Цены: 5 из 11» counts only variants on sale. «В продаже» off greys the row and removes it from validation.",
+   "«Покупатель видит» shows the final price after discount in so‘m, live as the seller types."]},
+ {id:"multi-2-matrix",name:"6. Разная цена · шаг 2, матрица",set:function(){S.mode="multi";S.istep=2;S.view="matrix";filledPhone();S.vars["8/256 ГБ | Голубой"].price=null;},notes:[
+   "With exactly 2 characteristics the matrix is the clearest view: rows = memory, columns = colour, each cell = one variant. It answers «which price is for 128 GB white?» at a glance.",
+   "Each row and column header has a quick-fill box (→ fills the row, ↓ fills the column). ✕ in a cell switches the variant off; a hatched cell is not on sale.",
+   "«Показать: Цена / Мин. заказ» switches what the cells edit. With a third characteristic the matrix gets tabs per value (try adding «Комплектация» in step 1).",
+   "Table and matrix edit the same data; the seller can switch at any time."]},
+ {id:"multi-2-bulk",name:"7. Разная цена · массовое заполнение",set:function(){S.mode="multi";S.istep=2;S.chars.mem=["6/128 ГБ","8/256 ГБ"];S.chars.color=["Белый","Чёрный","Голубой","Хаки"];combos();["Белый","Чёрный","Голубой"].forEach(function(c){S.sel["8/256 ГБ | "+c]=true;});},notes:[
+   "Checkboxes select rows; a dark action bar sticks to the bottom: set a price and/or MOQ for the selected rows, take them off sale or back.",
+   "Pattern used by Ozon Seller and Shopify for variant editing."]},
+ {id:"multi-err",name:"8. Разная цена · ошибки при «Продолжить»",set:function(){S.mode="multi";S.istep=3;filledPhone();S.vars["8/256 ГБ | Голубой"].price=null;S.vars["6/128 ГБ | Чёрный"].moq=0;S.showErr=true;},notes:[
+   "Errors are listed in a banner at the top; each item names the variant and jumps to its field. Fields are marked in place.",
+   "Texts: «Укажите цену», «От 1 до 100 000». A variant that is not on sale is never an error.",
+   "Validation runs on «Продолжить», then live while the seller fixes the fields."]},
+ {id:"multi-3-review",name:"9. Разная цена · шаг 3, проверка и вид для покупателя",set:function(){S.mode="multi";S.istep=3;filledPhone();S.vars["8/256 ГБ | Белый"].price=4290000;S.pv={mem:"8/256 ГБ",color:"Белый"};},notes:[
+   "This is the summary Akbar asked for: totals (on sale, price range, MOQ range, missing prices), warnings, and the final table, which stays editable.",
+   "⚑ Proposed warnings (soft, never blocking): more memory but cheaper than less memory with the same colour; a price far from the others (a missing or extra zero).",
+   "«Так увидит покупатель» is the real product-page picker. Combinations not on sale are struck through, so the seller sees exactly what a buyer can choose. Click the chips to try it."]},
+ {id:"range",name:"10. По диапазонам · заполнено",set:function(){S.type="range";},notes:[
+   "PT5 answer: the seller sets «до» of each tier; the next «от» follows automatically (read-only) so tiers never overlap or leave gaps. The first «от» is the MOQ. The last tier is «и больше».",
+   "2 – 5 tiers; each price must be lower than the one before (PT6). «Экономия» shows the saving against the first tier.",
+   "The ladder and the quantity check show the seller what a buyer pays for any quantity, including the hint «Добавьте ещё N шт.» (PT15).",
+   "So‘m only (PT7), discount in percent only (PT8). One table for all variants (PT4)."]},
+ {id:"range-err",name:"11. По диапазонам · ошибки",set:function(){S.type="range";S.tiers=[{from:10,to:49,price:52000},{from:50,to:40,price:53000},{from:41,to:null,price:null}];S.showErr=true;},notes:[
+   "«До» must be greater than «от»; a tier price must be lower than the previous one; every price is required.",
+   "Errors sit under the field and in the banner; fixing «до» updates the next «от» at once."]},
+ {id:"neg",name:"12. Договорная цена",set:function(){S.type="neg";},notes:[
+   "No price, currency or discount. MOQ is optional and shown to the buyer (PT9).",
+   "Buyer actions: «Запросить цену» (⚑ proposal: a structured request card in the chat with variant and quantity) and «Написать продавцу» (PT21).",
+   "⚑ Proposal: an optional price hint «от … сум за шт.». It raises the reply rate and keeps negotiable products in price filters. See the recommendations in the chat reply."]},
+ {id:"own-dialog",name:"14. Разная цена · «+ Своё значение» (окно)",set:function(){S.mode="multi";S.chars.mem=["6/128 ГБ","8/256 ГБ"];S.chars.color=["Белый","Чёрный"];ownOpen("color");},notes:[
+   "What opens on «+ Своё значение»: a dialog to add a value that is missing from the shared list. Only this seller sees it (in any of their products); no approval. Decided 13.11.2026.",
+   "Type to try the checks: «чёрный» is blocked as an existing value with «Выбрать его» (case, spaces, ё/е, GB/ГБ are ignored, so «8/128 gb» in Память is blocked too); «Голубой светлый» is similar to «Голубой», so the dialog offers «Выбрать «Голубой»», but the seller may still add their own.",
+   "Own values are shown on the product page but are not in catalogue filters (decided 13.11.2026; the earlier filter link was removed). The dialog says this in one line and suggests picking a shared value if filter visibility matters.",
+   "Swatch colour for «Цвет»; Uzbek name optional (otherwise shown as typed). Up to 40 characters ⚑. After «Добавить» the value is selected and the variant count updates. Admin side and «Мои значения»: prototype P-PT2 (https://claude.ai/artifact/WK8Md2dcRRzTaZatzYjSUN)."]},
+ {id:"own-step2",name:"15. Разная цена · своё значение в ценах",set:function(){S.mode="multi";S.istep=2;S.own.color=[{v:"Космический серый",own:true,c:"#5b5f66"}];S.chars.mem=["6/128 ГБ","8/256 ГБ"];S.chars.color=["Белый","Чёрный","Космический серый"];combos();var P={"6/128 ГБ":4380000,"8/256 ГБ":5150000};combos().forEach(function(x){x.d.price=P[x.parts[0].v];});},notes:[
+   "An own value behaves like any other value once added: it makes combinations, gets prices and MOQ in step 2, and appears in the buyer picker in step 3.",
+   "Only the label «своё» in step 1 differs. Buyers see «Космический серый» on the product page; it is not offered in the catalogue colour filter."]},
+ {id:"live-switch",name:"13. Опубликованный товар · смена типа цены",set:function(){S.live=true;},notes:[
+   "Changing the type of a live product opens a confirmation listing the consequences (PT10, still open): carts re-read the price, a negotiable product can no longer be bought from the cart, paid orders stay unchanged.",
+   "While creating a new product there is no dialog: the seller can switch types freely and only the selected type is saved."]}
+];
+var sel=document.getElementById("scn");
+sel.innerHTML=SC.map(function(s){return '<option value="'+s.id+'">'+s.name+'</option>';}).join("");
+function load(id){var s=SC.filter(function(x){return x.id===id;})[0]||SC[0];S=base();s.set();sel.value=s.id;
+  document.getElementById("notes").innerHTML='<span class="eyb">Notes · '+esc(s.name)+'</span><h2>What this state shows</h2><ul>'+s.notes.map(function(n){return '<li>'+esc(n)+'</li>';}).join("")+'</ul><span class="eyb" style="margin-top:6px">For the whole step</span><ul><li>⚑ marks a BA proposal that is not decided yet.</li><li>PT numbers refer to the Price Types Delivery Plan.</li><li>UI copy is Russian (the design language); Uzbek follows in the PRD.</li></ul>';
+  render();}
+sel.addEventListener("change",function(){load(sel.value);try{history.replaceState(null,"","#"+sel.value);}catch(e){}});
+document.getElementById("reset").addEventListener("click",function(){load(sel.value);});
+window.addEventListener("hashchange",function(){load(location.hash.slice(1));});
+load(location.hash.slice(1));
+})();
+</script>

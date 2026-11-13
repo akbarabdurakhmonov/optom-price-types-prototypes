@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Optom Characteristics Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: prototype toolbar band on top; below it the seller cabinet (sidebar + "Добавить товар" step 3) and a notes column on wide screens.
+   Look: Optom.uz seller cabinet from Figma (light, green accent, Inter). Deliberately single light theme: it mirrors the product's own UI. */
+:root{
+  --page:#f2f3f5; --card:#ffffff; --ink:#111827; --ink-2:#374151; --muted:#6b7280; --line:#e5e7eb; --line-2:#d1d5db; --soft:#f6f7f9;
+  --green:#2f9e44; --green-ink:#237a35; --green-50:#ecf7ee; --green-200:#a9dcb3;
+  --red:#d92d20; --red-50:#fef3f2; --amber:#b54708; --amber-50:#fffaeb; --blue:#175cd3; --blue-50:#eff6ff;
+  --bar:#1f2937; --bar-ink:#e5e7eb; --bar-muted:#9ca3af;
+  --font:"Inter",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.45}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* prototype toolbar */
+.pbar{background:var(--bar);color:var(--bar-ink);padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.pbar b{font-weight:600}
+.pbar .tag{font-size:12px;color:var(--bar-muted)}
+.pbar select{background:#111827;color:var(--bar-ink);border:1px solid #374151;border-radius:8px;padding:6px 10px;max-width:100%}
+.pbar button{background:transparent;color:var(--bar-ink);border:1px solid #374151;border-radius:8px;padding:6px 12px;cursor:pointer}
+.pbar button:hover{border-color:#6b7280}
+
+/* page grid */
+.wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+@media (min-width:1700px){.wrap{grid-template-columns:minmax(0,1fr) 330px;align-items:start}}
+.app{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px;min-width:0}
+@media (max-width:900px){.app{grid-template-columns:minmax(0,1fr)}.side{display:none}}
+
+/* sidebar */
+.side{background:transparent;display:flex;flex-direction:column;gap:4px;padding-top:4px}
+.logo{display:flex;align-items:center;gap:8px;font-size:26px;font-weight:600;letter-spacing:-.02em;margin:0 0 18px 8px}
+.logo i{width:28px;height:28px;border-radius:7px;background:repeating-linear-gradient(0deg,var(--green) 0 5px,transparent 5px 8px);display:inline-block}
+.side h6{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:14px 8px 4px;font-weight:600}
+.nav{padding:9px 12px;border-radius:10px;color:var(--ink-2);display:flex;gap:10px;align-items:center}
+.nav.on{background:var(--card);color:var(--ink);font-weight:500;box-shadow:0 1px 2px rgba(17,24,39,.06)}
+.nav span{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.35}
+.nav.on span{background:var(--green);opacity:1}
+
+/* main */
+.main{min-width:0;display:flex;flex-direction:column;gap:14px}
+.crumbs{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.crumbs b{color:var(--ink);font-weight:500}
+.panel{background:var(--card);border-radius:16px;box-shadow:0 1px 2px rgba(17,24,39,.05);min-width:0}
+.phead{padding:20px 24px;border-bottom:1px solid var(--line)}
+.phead h1{font-size:22px;font-weight:600;margin:0 0 2px;letter-spacing:-.01em}
+.phead p{margin:0;color:var(--muted)}
+.steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;padding:20px 24px;border-bottom:1px solid var(--line);overflow-x:auto}
+.st{display:flex;flex-direction:column;gap:6px;min-width:110px}
+.st .dot{display:flex;align-items:center}
+.st .dot i{width:22px;height:22px;border-radius:50%;border:2px solid var(--line-2);background:var(--card);display:grid;place-items:center;font-style:normal;font-size:12px;color:#fff;flex:none}
+.st .dot u{flex:1;height:2px;background:var(--line);margin-left:6px}
+.st.done .dot i{background:var(--green);border-color:var(--green)}
+.st.done .dot u{background:var(--green)}
+.st.cur .dot i{border-color:var(--green);box-shadow:0 0 0 3px var(--green-50);background:radial-gradient(var(--green) 0 4px,var(--card) 5px)}
+.st b{font-weight:500;font-size:13px}
+.st.cur b,.st.cur small{color:var(--green-ink)}
+.st small{color:var(--muted);font-size:12px;line-height:1.35}
+
+.body{display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;padding:24px}
+@media (max-width:1250px){.body{grid-template-columns:minmax(0,1fr)}}
+.lab h3{margin:0 0 2px;font-size:14px;font-weight:600}
+.lab p{margin:0;color:var(--muted)}
+.lab .hint{margin-top:14px;padding:10px 12px;border-radius:10px;background:var(--soft);color:var(--ink-2);font-size:12.5px}
+.content{min-width:0;display:flex;flex-direction:column;gap:16px}
+
+/* type cards */
+.types{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:700px){.types{grid-template-columns:minmax(0,1fr)}}
+.tcard{border:1px solid var(--line-2);border-radius:12px;padding:12px 14px;text-align:left;background:var(--card);cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px}
+.tcard b{font-weight:600}
+.tcard small{color:var(--muted);grid-column:1}
+.tcard .rad{grid-row:1/3;grid-column:2;align-self:center;width:18px;height:18px;border-radius:50%;border:1.6px solid var(--line-2)}
+.tcard.on{background:var(--green-50);border-color:var(--green-200)}
+.tcard.on small{color:var(--green-ink)}
+.tcard.on .rad{border-color:var(--green);background:radial-gradient(var(--green) 0 4px,#fff 5px)}
+
+.box{border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.seg{display:inline-flex;background:var(--soft);border-radius:10px;padding:3px;gap:2px;align-self:flex-start;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:7px 16px;border-radius:8px;cursor:pointer;color:var(--ink-2)}
+.seg button.on{background:var(--card);box-shadow:0 1px 2px rgba(17,24,39,.12);color:var(--ink);font-weight:500}
+.seg.sm button{padding:5px 12px;font-size:13px}
+
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px}
+@media (max-width:700px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.f{display:flex;flex-direction:column;gap:6px;min-width:0}
+.f > label,.flab{font-weight:500;font-size:13.5px}
+.f .sub{color:var(--muted);font-size:12px}
+.inp{display:flex;border:1px solid var(--line-2);border-radius:10px;background:var(--card);overflow:hidden;min-width:0}
+.inp input{border:0;outline:0;padding:10px 12px;min-width:0;width:100%;flex:1;background:transparent;font-variant-numeric:tabular-nums}
+.inp:focus-within{border-color:var(--green);box-shadow:0 0 0 3px var(--green-50)}
+.inp .suf{padding:0 12px;display:flex;align-items:center;border-left:1px solid var(--line);color:var(--ink-2);background:var(--soft);font-weight:500;white-space:nowrap}
+.inp select{border:0;border-left:1px solid var(--line);background:var(--soft);padding:0 10px;font-weight:600;cursor:pointer}
+.inp.ro{background:var(--soft)}
+.inp.ro input{color:var(--muted)}
+.f.bad .inp,.inp.bad{border-color:var(--red);box-shadow:0 0 0 3px var(--red-50)}
+.err{color:var(--red);font-size:12px;min-height:0}
+.err:empty{display:none}
+select.plain{border:1px solid var(--line-2);border-radius:10px;padding:10px 12px;background:var(--card);min-width:0}
+
+.btn{border:1px solid var(--line-2);background:var(--card);border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:500;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.btn:hover{border-color:#9ca3af}
+.btn.pri{background:var(--green);border-color:var(--green);color:#fff}
+.btn.pri:hover{background:var(--green-ink)}
+.btn.soft{background:var(--green-50);border-color:transparent;color:var(--green-ink)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--green-ink);padding:6px 8px}
+.btn.danger{color:var(--red)}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:8px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.spacer{flex:1}
+
+.note{border-radius:10px;padding:10px 12px;font-size:13px;display:flex;gap:8px}
+.note.info{background:var(--blue-50);color:#1e3a8a}
+.note.warn{background:var(--amber-50);color:#7a2e0b}
+.note.ok{background:var(--green-50);color:var(--green-ink)}
+.note.prop{border:1px dashed #c4b5fd;background:#faf7ff;color:#4c1d95}
+.flag{display:inline-block;font-size:11px;font-weight:600;padding:1px 6px;border-radius:6px;background:#ede9fe;color:#5b21b6;vertical-align:1px}
+
+/* error banner */
+.ebanner{border:1px solid #fecdca;background:var(--red-50);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.ebanner b{color:var(--red)}
+.ebanner ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
+.ebanner a{color:var(--ink);text-decoration:underline;cursor:pointer}
+
+/* inner stepper for Разная цена */
+.istep{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.istep button{border:0;background:transparent;display:flex;gap:8px;align-items:center;padding:6px 10px 6px 6px;border-radius:999px;cursor:pointer;color:var(--muted)}
+.istep button i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:600;background:var(--soft);color:var(--muted)}
+.istep button.on{background:var(--green-50);color:var(--green-ink);font-weight:500}
+.istep button.on i{background:var(--green);color:#fff}
+.istep button.done i{background:var(--green-200);color:var(--green-ink)}
+.istep button:disabled{cursor:default;opacity:.55}
+.istep .sep{width:18px;height:1px;background:var(--line-2)}
+
+/* characteristics */
+.char{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.char.on{border-color:var(--green-200);background:#fbfefb}
+.char head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.char head label{display:flex;gap:8px;align-items:center;font-weight:600;cursor:pointer}
+.char head small{color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line-2);border-radius:999px;padding:6px 12px;background:var(--card);cursor:pointer;display:inline-flex;gap:7px;align-items:center}
+.chip.on{border-color:var(--green);background:var(--green-50);color:var(--green-ink);font-weight:500}
+.chip.on::after{content:"✓";font-size:12px}
+.sw{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.15);display:inline-block;flex:none}
+.combo{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:var(--soft)}
+.combo b{font-size:20px;font-variant-numeric:tabular-nums}
+input[type=checkbox]{width:16px;height:16px;accent-color:var(--green);cursor:pointer;margin:0}
+
+/* progress */
+.prog{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.prog .bar{width:160px;max-width:100%;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.prog .bar span{display:block;height:100%;background:var(--green)}
+.prog small{color:var(--muted)}
+
+/* variant table */
+.tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table.vt{border-collapse:separate;border-spacing:0;width:100%;min-width:720px}
+table.vt.cmp{min-width:600px}
+.vt th{font-size:12px;font-weight:500;color:var(--muted);text-align:left;padding:9px 10px;background:var(--soft);border-bottom:1px solid var(--line);white-space:nowrap}
+.vt td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.vt tr:last-child td{border-bottom:0}
+.vt tr.grp td{background:#fafbfa;padding:9px 10px}
+.vt tr.grp b{font-weight:600}
+.vt tr.off td{background:#fafafa;color:var(--muted)}
+.vt tr.off .vname{text-decoration:line-through}
+.vt tr.sel td{background:#f3faf4}
+.vt .inp input{padding:7px 9px;width:100%}
+.vt .inp .suf{padding:0 8px;font-size:12.5px}
+.vt .w-price{width:190px}.vt .w-moq{width:120px}
+.vname{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.vtag{display:inline-flex;gap:6px;align-items:center;border-radius:7px;background:var(--soft);padding:3px 8px;font-size:13px;white-space:nowrap}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.eq{font-size:11.5px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
+.tog{position:relative;width:34px;height:20px;border-radius:10px;background:var(--line-2);border:0;cursor:pointer;flex:none}
+.tog::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
+.tog.on{background:var(--green)}
+.tog.on::after{left:16px}
+.ginp{display:flex;gap:6px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
+.ginp .inp{width:150px}
+.ginp .inp input{padding:6px 8px}
+
+.bulk{position:sticky;bottom:10px;z-index:3;background:var(--bar);color:var(--bar-ink);border-radius:12px;padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;box-shadow:0 8px 24px rgba(17,24,39,.25)}
+.bulk .inp{width:150px;border-color:#374151;background:#111827}
+.bulk .inp input{color:#fff;padding:7px 9px}
+.bulk .inp .suf{background:#1f2937;border-color:#374151;color:var(--bar-ink)}
+.bulk .btn{background:#374151;border-color:#374151;color:#fff}
+.bulk .btn.pri{background:var(--green);border-color:var(--green)}
+
+/* matrix */
+table.mx{border-collapse:separate;border-spacing:0;min-width:640px;width:100%}
+.mx th,.mx td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:8px;min-width:150px}
+.mx tr > *:last-child{border-right:0}
+.mx tr:last-child > *{border-bottom:0}
+.mx thead th{background:var(--soft);font-weight:500;text-align:left;vertical-align:top}
+.mx tbody th{background:#fafbfa;text-align:left;font-weight:600;white-space:nowrap;vertical-align:top}
+.mx .hd{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.mx .mini{display:flex;gap:4px}
+.mx .mini .inp{flex:1}
+.mx .mini .inp input{padding:5px 7px;font-size:12.5px}
+.mx td .cell{display:flex;gap:4px;align-items:center}
+.mx td .inp input{padding:7px 8px}
+.mx td.off{background:repeating-linear-gradient(135deg,#f6f7f9 0 6px,#eef0f3 6px 12px);color:var(--muted);font-size:12.5px}
+.xbtn{border:0;background:transparent;color:var(--muted);cursor:pointer;width:24px;height:24px;border-radius:6px;flex:none}
+.xbtn:hover{background:var(--soft);color:var(--red)}
+.linkbtn{border:0;background:transparent;color:var(--green-ink);cursor:pointer;padding:0;text-decoration:underline;font-size:12.5px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+
+/* review */
+.rv{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+@media (max-width:760px){.rv{grid-template-columns:minmax(0,1fr)}}
+.stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.stats{display:grid;gap:10px}
+.stat{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.stat small{color:var(--muted);display:block}
+.stat b{font-size:17px;font-variant-numeric:tabular-nums}
+.warns{display:flex;flex-direction:column;gap:6px}
+
+/* buyer preview */
+.pv{border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px;background:var(--card)}
+.pv .eyb{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.pimg{aspect-ratio:4/3;max-width:100%;border-radius:10px;background:linear-gradient(160deg,#eef1f4,#e3e7ec);display:grid;place-items:center}
+.pimg i{width:64px;height:118px;border-radius:12px;background:linear-gradient(170deg,#3b4252,#1f2430);box-shadow:inset 0 0 0 3px #575f70}
+.pv h4{margin:0;font-size:15px;font-weight:600}
+.pprice{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.pprice s{font-size:14px;font-weight:400;color:var(--muted);margin-left:6px}
+.popt{display:flex;flex-direction:column;gap:6px}
+.popt small{color:var(--muted)}
+.popt .chips .chip{padding:5px 10px;font-size:13px}
+.chip.dis{opacity:.45;text-decoration:line-through;cursor:not-allowed}
+.chip.pick{border-color:var(--ink);font-weight:600}
+.tierlist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.tierlist div{display:flex;justify-content:space-between;padding:7px 10px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.tierlist div:last-child{border-bottom:0}
+.tierlist .hit{background:var(--green-50);font-weight:600}
+
+/* tiers */
+.tiers{display:flex;flex-direction:column;gap:8px}
+.tier{display:grid;grid-template-columns:28px minmax(0,1fr) 18px minmax(0,1fr) minmax(0,1.4fr) 92px 32px;gap:8px;align-items:start}
+@media (max-width:760px){.tier{grid-template-columns:28px minmax(0,1fr) minmax(0,1fr);}.tier .dash,.tier .sv{display:none}.tier .tp{grid-column:2/4}.tier .td{grid-column:3}}
+.tier .no{width:28px;height:38px;display:grid;place-items:center;color:var(--muted);font-weight:600}
+.tier .dash{height:38px;display:grid;place-items:center;color:var(--muted)}
+.tier .sv{height:38px;display:flex;align-items:center}
+.save{font-size:12px;font-weight:600;color:var(--green-ink);background:var(--green-50);border-radius:6px;padding:2px 7px}
+.tierhead{display:grid;grid-template-columns:28px minmax(0,1fr) 18px minmax(0,1fr) minmax(0,1.4fr) 92px 32px;gap:8px;color:var(--muted);font-size:12px}
+@media (max-width:760px){.tierhead{display:none}}
+.ladder{display:flex;height:34px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.ladder div{display:flex;align-items:center;justify-content:center;font-size:12px;font-variant-numeric:tabular-nums;border-right:1px solid #fff;white-space:nowrap;overflow:hidden;padding:0 4px}
+.calc{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 14px;border-radius:12px;background:var(--soft)}
+.calc .inp{width:110px}
+
+.foot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:16px 24px;border-top:1px solid var(--line)}
+
+/* modal + toast */
+.scrim{position:fixed;inset:0;background:rgba(17,24,39,.45);display:grid;place-items:center;z-index:20;padding:16px}
+.modal{background:var(--card);border-radius:16px;max-width:460px;width:100%;padding:20px;display:flex;flex-direction:column;gap:12px}
+.modal h3{margin:0;font-size:17px}
+.modal ul{margin:0;padding-left:18px;color:var(--ink-2);display:flex;flex-direction:column;gap:4px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--bar);color:#fff;padding:10px 16px;border-radius:10px;z-index:30;max-width:calc(100% - 32px)}
+
+/* notes */
+.notes{background:var(--card);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+@media (min-width:1700px){.notes{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto}}
+.notes h2{margin:0;font-size:15px}
+.notes .eyb{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.notes ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;color:var(--ink-2);font-size:13px}
+.notes p{margin:0;font-size:13px;color:var(--ink-2)}
+</style>
+
+<style>
+/* P-PT2 additions: admin panel tables, value editor, sellers' own values report, own-value chips, buyer filter view. Same tokens as P-PT1. */
+.side .badge{margin-left:auto;background:var(--red);color:#fff;border-radius:999px;font-size:11px;font-weight:600;padding:1px 7px;line-height:1.5}
+.side .sub{padding-left:28px;font-size:13px}
+.atop{display:flex;justify-content:flex-end;gap:10px;align-items:center;color:var(--ink-2);font-size:13px}
+.atop .ava{width:28px;height:28px;border-radius:50%;background:#dbeafe;color:#1e3a8a;display:grid;place-items:center;font-size:11px;font-weight:600}
+.apanel{background:var(--card);border-radius:16px;box-shadow:0 1px 2px rgba(17,24,39,.05);padding:20px 24px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.apanel h1{font-size:22px;font-weight:600;margin:0;letter-spacing:-.01em;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.apanel h2{font-size:16px;font-weight:600;margin:0}
+.apanel .lead{margin:-10px 0 0;color:var(--muted)}
+table.t{border-collapse:separate;border-spacing:0;width:100%;min-width:760px}
+.t th{font-size:12px;font-weight:500;color:var(--muted);text-align:left;padding:9px 10px;background:var(--soft);border-bottom:1px solid var(--line);white-space:nowrap}
+.t td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+.t tr:last-child td{border-bottom:0}
+.t tr.click{cursor:pointer}.t tr.click:hover td{background:#fafbfa}
+.t tr.hid td{background:#fafafa;color:var(--muted)}
+.t .muted,.muted{color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:500;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.pill.g{background:var(--green-50);color:var(--green-ink)}
+.pill.n{background:var(--soft);color:var(--muted)}
+.pill.v{background:#ede9fe;color:#5b21b6}
+.pill.a{background:var(--amber-50);color:var(--amber)}
+.pill.r{background:var(--red-50);color:var(--red)}
+.pill.b{background:var(--blue-50);color:var(--blue)}
+.mchips{display:flex;flex-wrap:wrap;gap:4px}
+.mchip{font-size:12px;background:var(--soft);border-radius:6px;padding:1px 7px;display:inline-flex;gap:5px;align-items:center;white-space:nowrap}
+.search{display:flex;align-items:center;border:1px solid var(--line-2);border-radius:10px;padding:0 10px;background:var(--card);min-width:220px}
+.search input{border:0;outline:0;padding:9px 6px;background:transparent;min-width:0;flex:1}
+.search:focus-within{border-color:var(--green);box-shadow:0 0 0 3px var(--green-50)}
+.chk{display:inline-flex;gap:8px;align-items:center;cursor:pointer}
+.sect{border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.sect > header{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline}
+.sect > header h2{margin-right:6px}
+.sect > header small{color:var(--muted)}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:820px){.grid3{grid-template-columns:minmax(0,1fr)}}
+.trow{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.trow b{font-weight:600}
+.trow .sub{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.trow.lock{background:var(--soft)}
+table.vv{border-collapse:separate;border-spacing:0;width:100%;min-width:820px}
+.vv th{font-size:12px;font-weight:500;color:var(--muted);text-align:left;padding:8px;background:var(--soft);border-bottom:1px solid var(--line);white-space:nowrap}
+.vv td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.vv tr:last-child td{border-bottom:0}
+.vv tr.hid td{background:#fafafa}
+.vv tr.hid .inp{opacity:.6}
+.vv .inp input{padding:7px 9px}
+.vv .ord{display:flex;gap:2px}
+.vv .ord button{border:1px solid var(--line);background:var(--card);border-radius:6px;width:24px;height:24px;cursor:pointer;color:var(--ink-2);padding:0}
+.vv .ord button:disabled{opacity:.35;cursor:default}
+.vv .use{font-size:12px;color:var(--muted);white-space:nowrap;padding-top:8px;display:block}
+.vv .rn{font-size:11.5px;color:var(--amber);margin-top:3px;display:block}
+.vv .err{display:block;margin-top:3px}
+input[type=color]{width:34px;height:34px;border:1px solid var(--line-2);border-radius:8px;padding:2px;background:var(--card);cursor:pointer}
+textarea{font:inherit;color:inherit;border:1px solid var(--line-2);border-radius:10px;padding:10px 12px;width:100%;min-height:96px;resize:vertical}
+textarea:focus{outline:0;border-color:var(--green);box-shadow:0 0 0 3px var(--green-50)}
+.f.bad textarea{border-color:var(--red);box-shadow:0 0 0 3px var(--red-50)}
+.catgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px 12px;max-height:220px;overflow:auto;padding:4px 2px}
+.tabs2{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tabs2 button{border:0;background:transparent;padding:9px 12px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:500}
+.tabs2 button.on{color:var(--ink);border-bottom-color:var(--green)}
+.req{display:flex;flex-direction:column;gap:6px}
+.req .val{font-size:15px;font-weight:600}
+.match{font-size:12.5px;border-radius:8px;padding:6px 9px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.match.ex{background:var(--red-50);color:#7a271a}
+.match.sim{background:var(--amber-50);color:#7a2e0b}
+.match.none{background:var(--soft);color:var(--muted)}
+.chip.pend{border-style:dashed;border-color:#f79009;background:var(--amber-50);color:#7a2e0b}
+.chip.pend.on{border-style:dashed;border-color:#f79009;background:#fef0c7;color:#7a2e0b}
+.chip.pend small,.chip.rej small{font-size:11px;opacity:.85}
+.chip.rej{border-color:#fecdca;background:var(--red-50);color:var(--red);cursor:default}
+.chip.rej span.t{text-decoration:line-through}
+.chip.add{border-style:dashed;color:var(--green-ink)}
+.chip.new{box-shadow:0 0 0 3px var(--green-50)}
+.proto{border:1px dashed #9ca3af;background:#f9fafb;color:var(--ink-2);border-radius:10px;padding:8px 12px;font-size:12.5px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.proto b{font-weight:600}
+.modal.wide{max-width:620px}
+.modal .f{gap:5px}
+.qr{display:flex;flex-wrap:wrap;gap:6px}
+.qr button{border:1px solid var(--line-2);background:var(--card);border-radius:999px;padding:4px 10px;font-size:12.5px;cursor:pointer}
+.qr button:hover{border-color:var(--green)}
+.radl{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto}
+.radl label{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer}
+.radl label.on{border-color:var(--green-200);background:var(--green-50)}
+.radl small{color:var(--muted);margin-left:auto;white-space:nowrap}
+.decl{display:flex;flex-direction:column;gap:8px}
+.cnt{font-variant-numeric:tabular-nums}
+.char .chead{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.char .chead label{display:flex;gap:8px;align-items:center;font-weight:600;cursor:pointer}
+.char .chead small{color:var(--muted)}
+.apanel h1 .btn{font-size:14px;letter-spacing:0}
+@media (max-width:900px){.side{display:none}.side.keep{display:flex}}
+.chip.own{border-style:dashed}
+.chip.own small{font-size:11px;color:var(--muted)}
+.chip.own.on small{color:var(--green-ink)}
+</style>
+
+<div class="pbar">
+  <b>P-PT2 · Характеристики и значения вариантов</b>
+  <span class="tag">Prototype for the Price types PRD · v0.3 · 13.11.2026 · UI in Russian, notes in English · goes with P-PT1</span>
+  <span class="spacer"></span>
+  <label for="scn" class="tag">Scenario</label>
+  <select id="scn" aria-label="Scenario"></select>
+  <button type="button" id="reset">Reset scenario</button>
+</div>
+
+<div class="wrap">
+  <div class="app" id="app"></div>
+  <aside class="notes" id="notes" aria-label="Prototype notes"></aside>
+</div>
+<div id="layer"></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- reference data ---------- */
+var CATS=["Смартфоны","Планшеты","Ноутбуки","Умные часы","Наушники","Телевизоры","Холодильники","Стиральные машины","Кроссовки","Футболки","Плитка","Обои"];
+var SELLER_CAT="Смартфоны", ME="TechMarket";
+var MAXLEN=40, CAP=50;
+function V(id,ru,uz,en,used,c){return {id:id,ru:ru,uz:uz,en:en,used:used||0,c:c||null,hidden:false};}
+function baseData(){return {
+  fields:[
+    {id:"mem",ru:"Память (ОЗУ / встроенная)",uz:"Xotira (operativ / ichki)",en:"Memory (RAM / storage)",variant:true,filter:true,custom:true,varUse:318,
+     cats:["Смартфоны","Планшеты"],values:[V("m1","6/128 ГБ","6/128 GB","6/128 GB",318),V("m2","8/128 ГБ","8/128 GB","8/128 GB",402),V("m3","8/256 ГБ","8/256 GB","8/256 GB",377),V("m4","12/256 ГБ","12/256 GB","12/256 GB",190),V("m5","12/512 ГБ","12/512 GB","12/512 GB",96)]},
+    {id:"color",ru:"Цвет",uz:"Rang",en:"Colour",variant:true,filter:true,custom:true,varUse:1204,
+     cats:["Смартфоны","Планшеты","Ноутбуки","Умные часы","Наушники","Холодильники","Стиральные машины","Кроссовки","Футболки","Обои"],
+     values:[V("c1","Белый","Oq","White",1240,"#f4f4f4"),V("c2","Чёрный","Qora","Black",1610,"#1f2023"),V("c7","Синий","Ko‘k","Blue",377,"#2f5fd0"),V("c3","Голубой","Havorang","Light blue",288,"#9cc4ea"),V("c8","Зелёный","Yashil","Green",215,"#3f9c55"),V("c4","Лаванда","Lavanda","Lavender",64,"#c9b8e8"),V("c5","Хаки","Xaki","Khaki",41,"#7a7a52"),V("c6","Красный","Qizil","Red",503,"#d63a3a")]},
+    {id:"kit",ru:"Комплектация",uz:"To‘plam",en:"Package",variant:true,filter:false,custom:true,varUse:16,
+     cats:["Смартфоны"],values:[V("k1","Стандарт","Standart","Standard",12),V("k2","С зарядкой 25 Вт","25 Vt quvvatlagich bilan","With 25 W charger",4)]},
+    {id:"os",ru:"Операционная система",uz:"Operatsion tizim",en:"Operating system",variant:false,filter:true,custom:false,varUse:0,
+     cats:["Смартфоны","Планшеты"],values:[V("o1","Android","Android","Android",820),V("o2","iOS","iOS","iOS",140),V("o3","HarmonyOS","HarmonyOS","HarmonyOS",12)]},
+    {id:"size",ru:"Размер обуви (EU)",uz:"Poyabzal o‘lchami (EU)",en:"Shoe size (EU)",variant:true,filter:true,custom:false,varUse:233,
+     cats:["Кроссовки"],values:["39","40","41","42","43","44"].map(function(s,i){return V("s"+i,s,s,s,40+i*7);})},
+    {id:"diag",ru:"Диагональ экрана",uz:"Ekran diagonali",en:"Screen size",variant:false,filter:true,custom:false,varUse:0,
+     cats:["Смартфоны","Планшеты","Телевизоры"],values:[V("d1","до 6\"","6\" gacha","up to 6\"",210),V("d2","6–6,5\"","6–6,5\"","6–6.5\"",530),V("d3","более 6,5\"","6,5\" dan ortiq","over 6.5\"",310)]}
+  ],
+  catOrder:["mem","color","os","diag","kit"],
+  /* this seller's own values (visible only to TechMarket) */
+  own:[
+    {id:"u1",field:"color",ru:"Титановый синий",uz:"",c:"#3c4a6b",link:"c7",used:3},
+    {id:"u2",field:"color",ru:"Песочный",uz:"",c:"#d8c3a0",link:null,used:1},
+    {id:"u3",field:"kit",ru:"С чехлом и стеклом",uz:"G‘ilof va himoya oynasi bilan",c:null,link:null,used:2}
+  ],
+  /* other sellers' own values, aggregated for the admin report */
+  others:[
+    {field:"color",ru:"Титановый синий",sellers:13,products:58,link:"c7"},
+    {field:"color",ru:"Мятный",sellers:6,products:19,link:"c8"},
+    {field:"mem",ru:"16/1 ТБ",sellers:4,products:9,link:null},
+    {field:"kit",ru:"С чехлом и стеклом",sellers:2,products:5,link:null},
+    {field:"color",ru:"Графитовый",sellers:3,products:7,link:"c2"},
+    {field:"mem",ru:"8/128 GB eSIM",sellers:1,products:1,link:null}
+  ],
+  nextId:1
+};}
+function baseUI(){return {
+  surface:"admin", view:"list", form:null, showErr:false, modal:null, toast:null, q:"", onlyVar:false,
+  seller:{sel:{mem:[],color:[],kit:[]},open:{},justAdded:null},
+  buyer:{color:["c7"]}
+};}
+var D,U;
+
+/* ---------- helpers ---------- */
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+function fmt(n){return String(n).replace(/\B(?=(\d{3})+(?!\d))/g," ");}
+function plural(n,a,b,c){var m10=n%10,m100=n%100;if(m10===1&&m100!==11)return a;if(m10>=2&&m10<=4&&(m100<10||m100>=20))return b;return c;}
+function fld(id){return D.fields.filter(function(f){return f.id===id;})[0];}
+function val(f,id){return f.values.filter(function(v){return v.id===id;})[0];}
+function norm(s){return String(s||"").toLowerCase().replace(/ё/g,"е").replace(/gb/g,"гб").replace(/tb/g,"тб").replace(/[\s\-_.,()\/]+/g,"");}
+function matchIn(list,text,skipIdx){ /* list of {ru} ; returns {kind:"ex"|"sim", item} */
+  var n=norm(text);if(!n)return null;var sim=null;
+  for(var i=0;i<list.length;i++){if(i===skipIdx)continue;var m=norm(list[i].ru);if(!m)continue;if(m===n)return {kind:"ex",item:list[i]};
+    if(!sim&&m.length>=4&&n.length>=4&&(m.indexOf(n)>-1||n.indexOf(m)>-1))sim={kind:"sim",item:list[i]};}
+  return sim;
+}
+function sw(c){return c?'<i class="sw" style="background:'+esc(c)+'"></i>':"";}
+
+/* ---------- shells ---------- */
+function adminShell(active,content){
+  function nav(k,t,extra){return '<div class="nav'+(active===k?" on":"")+(extra||"")+'"'+(k?' data-nav="'+k+'" style="cursor:pointer"':"")+'><span></span>'+t+'</div>';}
+  return '<nav class="side" aria-label="Admin panel"><div class="logo"><i></i>optom.uz</div>'+
+    '<h6>Админ-панель</h6>'+nav("","Аналитика")+nav("","Товары")+nav("cat","Категории")+
+    '<div class="nav sub'+(active==="list"||active==="form"?" on":"")+'" data-nav="list" style="cursor:pointer"><span></span>Характеристики</div>'+
+    '<div class="nav sub'+(active==="custom"?" on":"")+'" data-nav="custom" style="cursor:pointer"><span></span>Свои значения продавцов</div>'+
+    nav("","Заказы")+nav("","Пользователи")+nav("","Справочники")+'</nav>'+
+    '<main class="main"><div class="atop"><span>RU ▾</span><span class="ava">АХ</span><b style="font-weight:500">Абдулазиз Холдаров</b></div>'+content+'</main>';
+}
+function sellerShell(content){
+  return '<nav class="side" aria-label="Seller cabinet"><div class="logo"><i></i>optom</div><h6>Основное</h6><div class="nav"><span></span>Аналитика</div><div class="nav on"><span></span>Товары</div><div class="nav"><span></span>Заказы</div><div class="nav"><span></span>Чаты</div><h6>Организация</h6><div class="nav"><span></span>Сотрудники</div><div class="nav"><span></span>Филиалы</div><h6>Система</h6><div class="nav"><span></span>Уведомления</div><div class="nav"><span></span>Настройки</div></nav>'+
+  '<main class="main"><div class="crumbs"><b>Товары</b> / <span>Добавить товар</span></div><section class="panel">'+
+  '<div class="phead"><h1>Добавить товар</h1><p>Samsung Galaxy A55 5G · категория «'+SELLER_CAT+'» · магазин TechMarket</p></div>'+
+  '<div class="steps"><div class="st done"><div class="dot"><i>✓</i><u></u></div><b>Основная информация</b><small>Добавьте основные сведения о товаре</small></div><div class="st done"><div class="dot"><i>✓</i><u></u></div><b>Характеристики и медиа</b><small>Укажите характеристики и загрузите фотографии</small></div><div class="st cur"><div class="dot"><i></i><u></u></div><b>Цена и остатки</b><small>Настройте стоимость и наличие</small></div><div class="st"><div class="dot"><i></i><u></u></div><b>Доставка</b><small>Выберите место хранения товара</small></div><div class="st"><div class="dot"><i></i></div><b>Проверка</b><small>Проверьте информацию перед публикацией</small></div></div>'+
+  '<div class="body"><div class="lab"><h3>Цена и остатки</h3><p>Настройте стоимость и минимальный заказ</p><div class="hint">Значения — из справочника платформы. Если нужного нет, добавьте своё: его увидите только вы.</div></div><div class="content">'+content+'</div></div>'+
+  '<div class="foot"><button type="button" class="btn soft">← Назад</button><span class="spacer"></span><button type="button" class="btn">Отменить создание</button><button type="button" class="btn pri" data-act="sContinue">Продолжить →</button></div></section></main>';
+}
+
+/* ---------- admin: list ---------- */
+function aList(){
+  var q=norm(U.q),rows=D.fields.filter(function(f){return (!U.onlyVar||f.variant)&&(!q||norm(f.ru+f.uz+f.en).indexOf(q)>-1);});
+  var h='<div class="apanel"><h1>Характеристики <span class="spacer"></span><button type="button" class="btn pri" data-act="aNew">+ Создать характеристику</button></h1>'+
+  '<p class="lead">Общий справочник для всех категорий. Одна характеристика подключается к нескольким категориям; её значения используют все товары этих категорий.</p>'+
+  '<div class="row"><label class="search">⌕<input data-k="q" value="'+esc(U.q)+'" placeholder="Поиск по названию (RU, UZ, EN)"></label><label class="chk"><input type="checkbox" data-act="onlyVar"'+(U.onlyVar?" checked":"")+'> Только для вариантов</label><span class="spacer"></span><span class="muted">'+rows.length+' из '+D.fields.length+'</span></div>'+
+  '<div class="tscroll"><table class="t"><thead><tr><th>Характеристика</th><th>Значения</th><th>Категории</th><th>Для вариантов</th><th>Фильтр для покупателей</th><th>Свои значения продавцов</th><th></th></tr></thead><tbody>';
+  if(!rows.length)h+='<tr><td colspan="7" class="muted" style="padding:18px">Ничего не найдено. Измените запрос или <button class="linkbtn" data-act="aNew">создайте характеристику</button>.</td></tr>';
+  rows.forEach(function(f){
+    var vis=f.values.filter(function(v){return !v.hidden;});
+    h+='<tr class="click" data-act="aEdit" data-v="'+f.id+'"><td><b>'+esc(f.ru)+'</b><div class="muted" style="font-size:12.5px">'+esc(f.uz)+' · '+esc(f.en)+'</div></td>'+
+      '<td><div class="mchips">'+vis.slice(0,3).map(function(v){return '<span class="mchip">'+sw(v.c)+esc(v.ru)+'</span>';}).join("")+(vis.length>3?'<span class="mchip">+'+(vis.length-3)+'</span>':"")+'</div></td>'+
+      '<td class="cnt" title="'+esc(f.cats.join(", "))+'">'+f.cats.length+' <span class="muted">'+esc(f.cats.slice(0,2).join(", "))+(f.cats.length>2?"…":"")+'</span></td>'+
+      '<td>'+(f.variant?'<span class="pill v">Да</span>':'<span class="pill n">Нет</span>')+'</td>'+
+      '<td>'+(f.filter?'<span class="pill g">Показывается</span>':'<span class="pill n">Скрыто</span>')+'</td>'+
+      '<td>'+(f.custom?'<span class="pill b">Разрешены</span>':'<span class="pill n">Нет</span>')+'</td>'+
+      '<td><button type="button" class="btn ghost sm" data-act="aEdit" data-v="'+f.id+'">Изменить</button></td></tr>';
+  });
+  h+='</tbody></table></div><p class="muted" style="margin:0;font-size:12.5px">Удаления нет: характеристику и её значения скрывают. Так товары, у которых они заполнены, не теряют данные.</p></div>';
+  return adminShell("list",h);
+}
+
+/* ---------- admin: form ---------- */
+function newForm(cats){return {mode:"new",fid:null,ru:"",uz:"",en:"",variant:true,filter:true,custom:true,varUse:0,cats:cats||[],values:[],bulk:"",bulkOpen:false,catQ:"",isColor:false};}
+function editForm(f){return {mode:"edit",fid:f.id,ru:f.ru,uz:f.uz,en:f.en,variant:f.variant,filter:f.filter,custom:f.custom,varUse:f.varUse,cats:f.cats.slice(),
+  values:f.values.map(function(v){return {id:v.id,ru:v.ru,uz:v.uz,en:v.en,c:v.c,used:v.used,hidden:v.hidden,orig:v.ru};}),bulk:"",bulkOpen:false,catQ:"",isColor:f.id==="color"};}
+function formErrors(){
+  var F=U.form,E=[];function add(k,msg,label){E.push({k:k,msg:msg,label:label||msg});}
+  if(!F.ru.trim())add("f.ru","Укажите название на русском");
+  if(!F.uz.trim())add("f.uz","Укажите название на узбекском");
+  var other=D.fields.filter(function(f){return f.id!==F.fid;});
+  var dupF=F.ru.trim()&&matchIn(other,F.ru);if(dupF&&dupF.kind==="ex")add("f.ru","Характеристика с таким названием уже есть: «"+dupF.item.ru+"»");
+  if(F.ru.length>MAXLEN)add("f.ru","Не больше "+MAXLEN+" символов");
+  if(!F.values.length)add("f.values","Добавьте хотя бы одно значение");
+  F.values.forEach(function(v,i){
+    var lab="Значение "+(i+1)+(v.ru?" «"+v.ru+"»":"");
+    if(!v.ru.trim())add("v:"+i+":ru","Укажите значение на русском",lab+": нет названия на русском");
+    else if(v.ru.length>MAXLEN)add("v:"+i+":ru","Не больше "+MAXLEN+" символов",lab+": длиннее "+MAXLEN+" символов");
+    else{var m=matchIn(F.values,v.ru,i);if(m&&m.kind==="ex"&&F.values.indexOf(m.item)<i)add("v:"+i+":ru","Повторяет значение «"+m.item.ru+"»",lab+": повторяет «"+m.item.ru+"»");}
+    if(!v.uz.trim())add("v:"+i+":uz","Укажите на узбекском",lab+": нет перевода на узбекский");
+  });
+  return E;
+}
+function errMap(){var m={};if(!U.showErr||!U.form)return m;formErrors().forEach(function(e){if(!m[e.k])m[e.k]=e.msg;});return m;}
+function inpF(k,value,ph,extra){var E=errMap();return '<div class="inp'+(E[k]?" bad":"")+'" data-wrap="'+k+'"><input id="in-'+k+'" data-k="'+k+'" value="'+esc(value)+'" placeholder="'+esc(ph||"")+'"'+(extra||"")+'></div><span class="err" data-err="'+k+'">'+(E[k]||"")+'</span>';}
+function toggleRow(k,on,title,sub,lock){return '<div class="trow'+(lock?" lock":"")+'"><span><b>'+title+'</b><span class="sub">'+sub+'</span></span><button type="button" class="tog'+(on?" on":"")+'" role="switch" aria-checked="'+on+'" aria-label="'+esc(title)+'" data-act="ftog" data-v="'+k+'"></button></div>';}
+function aForm(){
+  var F=U.form,E=errMap(),errs=U.showErr?formErrors():[];
+  var title=F.mode==="new"?"Новая характеристика":"Характеристика «"+esc(fld(F.fid).ru)+"»";
+  var h='<div class="crumbs"><b data-nav="list" style="cursor:pointer">Характеристики</b> / <span>'+(F.mode==="new"?"Новая":"Изменение")+'</span></div><div class="apanel"><h1>'+title+'</h1>';
+  if(errs.length)h+='<div class="ebanner" id="ebanner" role="alert"><b>Исправьте, чтобы сохранить ('+errs.length+')</b><ul>'+errs.slice(0,8).map(function(e){return '<li><a data-go="'+e.k+'">'+esc(e.label)+'</a></li>';}).join("")+(errs.length>8?'<li>… и ещё '+(errs.length-8)+'</li>':"")+'</ul></div>';
+  /* names */
+  h+='<section class="sect"><header><h2>Название</h2><small>Так характеристику увидят продавцы в форме товара и покупатели в фильтрах и на странице товара</small></header><div class="grid3">'+
+    '<div class="f'+(E["f.ru"]?" bad":"")+'" data-f="f.ru"><label for="in-f.ru">Русский *</label>'+inpF("f.ru",F.ru,"Например, Цвет")+'</div>'+
+    '<div class="f'+(E["f.uz"]?" bad":"")+'" data-f="f.uz"><label for="in-f.uz">O‘zbekcha *</label>'+inpF("f.uz",F.uz,"Masalan, Rang")+'</div>'+
+    '<div class="f"><label for="in-f.en">English <span class="flag">⚑</span></label>'+inpF("f.en",F.en,"e.g. Colour")+'<span class="sub">Необязательно</span></div></div></section>';
+  /* values */
+  var hiddenN=F.values.filter(function(v){return v.hidden;}).length;
+  h+='<section class="sect" data-f="f.values"><header><h2>Значения</h2><small>'+F.values.length+' '+plural(F.values.length,"значение","значения","значений")+(hiddenN?' · скрыто '+hiddenN:"")+' · порядок здесь = порядок в форме товара и в фильтре</small></header>'+
+    '<span class="err" data-err="f.values">'+(E["f.values"]||"")+'</span>';
+  if(F.values.length){
+    h+='<div class="tscroll"><table class="vv"><thead><tr><th style="width:62px">Порядок</th>'+(F.isColor?'<th style="width:48px">Цвет</th>':"")+'<th>Русский *</th><th>O‘zbekcha *</th><th>English</th><th style="width:110px">В товарах</th><th style="width:130px"></th></tr></thead><tbody>';
+    F.values.forEach(function(v,i){
+      var renamed=v.used&&v.orig&&v.ru!==v.orig;
+      h+='<tr class="'+(v.hidden?"hid":"")+'"><td><div class="ord"><button type="button" data-act="vUp" data-v="'+i+'" aria-label="Выше"'+(i===0?" disabled":"")+'>↑</button><button type="button" data-act="vDown" data-v="'+i+'" aria-label="Ниже"'+(i===F.values.length-1?" disabled":"")+'>↓</button></div></td>'+
+      (F.isColor?'<td><input type="color" data-k="v:'+i+':c" value="'+esc(v.c||"#cccccc")+'" aria-label="Цвет образца"></td>':"")+
+      '<td data-f="v:'+i+':ru">'+inpF("v:"+i+":ru",v.ru,"Значение")+(renamed?'<span class="rn">Название изменится в '+fmt(v.used)+' '+plural(v.used,"товаре","товарах","товарах")+'</span>':"")+'</td>'+
+      '<td data-f="v:'+i+':uz">'+inpF("v:"+i+":uz",v.uz,"Qiymat")+'</td>'+
+      '<td>'+inpF("v:"+i+":en",v.en,"Value")+'</td>'+
+      '<td><span class="use">'+(v.used?fmt(v.used)+' '+plural(v.used,"товар","товара","товаров"):"не используется")+'</span></td>'+
+      '<td>'+(v.used?'<button type="button" class="btn ghost sm" data-act="vHide" data-v="'+i+'">'+(v.hidden?"Показать":"Скрыть")+'</button>':'<button type="button" class="btn ghost sm danger" data-act="vDel" data-v="'+i+'">Удалить</button>')+(v.hidden?'<span class="pill n">Скрыто</span>':"")+'</td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+  h+='<div class="row"><button type="button" class="btn soft sm" data-act="vAdd">+ Добавить значение</button><button type="button" class="btn ghost sm" data-act="bulkToggle">'+(F.bulkOpen?"Скрыть":"Добавить списком")+'</button><span class="spacer"></span><span class="muted" style="font-size:12.5px">Значение используется в товарах — его можно скрыть, но не удалить</span></div>';
+  if(F.bulkOpen)h+='<div class="f"><label for="bulk">Каждое значение с новой строки (на русском)</label><textarea id="bulk" data-k="bulk" placeholder="6/128 ГБ&#10;8/128 ГБ&#10;8/256 ГБ">'+esc(F.bulk)+'</textarea><span class="sub">Повторы и пустые строки пропускаются. Переводы заполните в таблице.</span><div class="row"><button type="button" class="btn pri sm" data-act="bulkAdd">Добавить в список</button></div></div>';
+  h+='</section>';
+  /* usage */
+  var varLock=F.mode==="edit"&&F.variant&&F.varUse>0;
+  h+='<section class="sect"><header><h2>Как используется</h2></header>'+
+    toggleRow("variant",F.variant,'Можно использовать для вариантов <span class="flag">⚑ новое</span>','Продавец сможет выбрать её в «Разная цена»: что отличается у вариантов одного товара (цвет, память, размер). Выключите для описательных характеристик (ОС, материал).'+(varLock?' Сейчас задаёт варианты в '+fmt(F.varUse)+' товарах.':""),false)+
+    toggleRow("filter",F.filter,"Показывать покупателям как фильтр","Как в US-AF-5.5-03: поле видно в фильтрах каталога. Данные товаров не меняются.",false)+
+    toggleRow("custom",F.custom,'Продавцы могут добавлять свои значения <span class="flag">⚑ новое</span>','Если нужного значения нет, продавец добавит своё. Его видит только этот продавец, одобрять не нужно. Частые значения видны в отчёте «Свои значения продавцов».',false)+
+  '</section>';
+  /* categories */
+  var cq=norm(F.catQ);
+  h+='<section class="sect"><header><h2>Категории</h2><small>Выбрано: '+F.cats.length+(F.mode==="edit"?' · изменения применятся ко всем товарам этих категорий':"")+'</small></header>'+
+    (F.cats.length?'<div class="mchips">'+F.cats.map(function(c){return '<span class="mchip">'+esc(c)+'</span>';}).join("")+'</div>':'<span class="muted">Пока не подключена ни к одной категории — продавцы её не увидят. Можно подключить позже в карточке категории.</span>')+
+    '<label class="search" style="max-width:320px">⌕<input data-k="catQ" value="'+esc(F.catQ)+'" placeholder="Найти категорию"></label><div class="catgrid">'+
+    CATS.filter(function(c){return !cq||norm(c).indexOf(cq)>-1;}).map(function(c){var on=F.cats.indexOf(c)>-1;return '<label class="chk"><input type="checkbox" data-act="fcat" data-v="'+esc(c)+'"'+(on?" checked":"")+'> '+esc(c)+'</label>';}).join("")+'</div></section>';
+  h+='<div class="row"><span class="spacer"></span><button type="button" class="btn" data-act="fCancel">Отмена</button><button type="button" class="btn pri" data-act="fSave">'+(F.mode==="new"?"Создать":"Сохранить")+'</button></div></div>';
+  return adminShell("form",h);
+}
+
+/* ---------- admin: category ---------- */
+function aCat(){
+  var ids=D.catOrder.filter(function(id){var f=fld(id);return f&&f.cats.indexOf(SELLER_CAT)>-1;});
+  var h='<div class="crumbs"><b data-nav="cat" style="cursor:pointer">Категории</b> / <span>Электроника</span> / <span>'+SELLER_CAT+'</span></div><div class="apanel"><h1>Категория «'+SELLER_CAT+'» · характеристики <span class="spacer"></span><button type="button" class="btn pri" data-act="catPick">+ Подключить характеристику</button></h1>'+
+  '<p class="lead">Эти характеристики продавец заполняет в форме товара этой категории — в этом порядке. «Для вариантов» — те, что можно выбрать в «Разная цена».</p>'+
+  '<div class="tscroll"><table class="t"><thead><tr><th style="width:70px">Порядок</th><th>Характеристика</th><th>Значений</th><th>Для вариантов</th><th>Фильтр</th><th>Подключена к категориям</th><th></th></tr></thead><tbody>';
+  ids.forEach(function(id,i){var f=fld(id);
+    h+='<tr><td><div class="ord" style="display:flex;gap:2px"><button type="button" class="btn sm" style="padding:2px 7px" data-act="cUp" data-v="'+id+'"'+(i===0?" disabled":"")+' aria-label="Выше">↑</button><button type="button" class="btn sm" style="padding:2px 7px" data-act="cDown" data-v="'+id+'"'+(i===ids.length-1?" disabled":"")+' aria-label="Ниже">↓</button></div></td>'+
+    '<td><b>'+esc(f.ru)+'</b></td><td class="cnt">'+f.values.filter(function(v){return !v.hidden;}).length+'</td><td>'+(f.variant?'<span class="pill v">Да</span>':'<span class="pill n">Нет</span>')+'</td><td>'+(f.filter?'<span class="pill g">Показывается</span>':'<span class="pill n">Скрыто</span>')+'</td>'+
+    '<td class="cnt">'+f.cats.length+'</td><td style="white-space:nowrap"><button type="button" class="btn ghost sm" data-act="aEdit" data-v="'+id+'">Изменить</button><button type="button" class="btn ghost sm" data-act="cDetach" data-v="'+id+'">Отключить</button></td></tr>';});
+  h+='</tbody></table></div><p class="muted" style="margin:0;font-size:12.5px">«Изменить» меняет общую характеристику — для всех её категорий. Отключение убирает её только из этой категории.</p></div>';
+  return adminShell("cat",h);
+}
+
+/* ---------- admin: sellers' own values report ---------- */
+function reportRows(){
+  var map={},rows=[];
+  function add(field,ru,sellers,products,link,mine){var k=field+"|"+norm(ru);if(!map[k]){map[k]={field:field,ru:ru,sellers:0,products:0,links:{},mine:false};rows.push(map[k]);}
+    var r=map[k];r.sellers+=sellers;r.products+=products;if(link)r.links[link]=(r.links[link]||0)+sellers;if(mine)r.mine=true;}
+  D.others.forEach(function(o){add(o.field,o.ru,o.sellers,o.products,o.link,false);});
+  D.own.forEach(function(o){add(o.field,o.ru,1,o.used,o.link,true);});
+  rows.forEach(function(r){var best=null,n=0;Object.keys(r.links).forEach(function(l){if(r.links[l]>n){n=r.links[l];best=l;}});r.link=best;r.linkN=n;});
+  rows.sort(function(a,b){return b.sellers-a.sellers||b.products-a.products;});
+  return rows;
+}
+function aCustom(){
+  var rows=reportRows();
+  var h='<div class="apanel"><h1>Свои значения продавцов</h1><p class="lead">Значения, которые продавцы добавили сами. Их видит только продавец-автор; одобрять их не нужно. Отчёт помогает найти частые значения и добавить их в общий справочник.</p>'+
+  '<div class="tscroll"><table class="t"><thead><tr><th>Значение</th><th>Характеристика</th><th>Продавцов</th><th>Товаров</th><th style="width:200px"></th></tr></thead><tbody>';
+  rows.forEach(function(r,i){var f=fld(r.field),ln=r.link?val(f,r.link):null,cand=r.sellers>=5;
+    h+='<tr><td><b>«'+esc(r.ru)+'»</b>'+(cand?' <span class="pill v">Кандидат в справочник</span>':"")+(r.mine?' <span class="pill b">есть у TechMarket</span>':"")+'</td><td>'+esc(f.ru)+'</td><td class="cnt">'+r.sellers+'</td><td class="cnt">'+r.products+'</td>'+
+      '<td><button type="button" class="btn '+(cand?"pri":"")+' sm" data-act="promote" data-v="'+i+'">Добавить в справочник</button></td></tr>';});
+  h+='</tbody></table></div><p class="muted" style="margin:0;font-size:12.5px">«Кандидат» — значение есть у 5 продавцов и больше <span class="flag">⚑</span>. Свои значения не попадают в фильтры каталога; после добавления в справочник значение появится в фильтре. Неуместные значения ловит обычная модерация товаров (AF-5.2).</p></div>';
+  return adminShell("custom",h);
+}
+
+/* ---------- seller ---------- */
+function sFields(){return D.catOrder.map(fld).filter(function(f){return f&&f.variant&&f.cats.indexOf(SELLER_CAT)>-1;});}
+function ownOf(fid){return D.own.filter(function(o){return o.field===fid;});}
+function anyVal(fid,id){var f=fld(fid);return val(f,id)||D.own.filter(function(o){return o.id===id;})[0];}
+function sCount(){var tot=1,any=false;sFields().forEach(function(f){var n=(U.seller.sel[f.id]||[]).length;if(n){any=true;tot*=n;}});return any?tot:0;}
+function sMain(){
+  var S=U.seller,h="";
+  h+='<div class="seg" role="tablist" aria-label="Тип цены"><button type="button" class="on">Фиксированная цена</button><button type="button" disabled style="opacity:.55">По диапазонам</button><button type="button" disabled style="opacity:.55">Договорная</button></div>'+
+     '<div class="seg sm"><button type="button">Единая цена</button><button type="button" class="on">Разная цена</button></div>'+
+     '<div class="istep"><button type="button" class="on"><i>1</i>Что отличается</button><span class="sep"></span><button type="button" disabled><i>2</i>Цены</button><span class="sep"></span><button type="button" disabled><i>3</i>Проверка</button><span class="muted" style="font-size:12px;margin-left:6px">шаги 2–3 — в P-PT1</span></div>';
+  h+='<div class="row"><div class="f" style="flex:1;min-width:240px"><span class="flab">Что отличается у вариантов?</span><span class="sub">Отметьте характеристики, от которых зависит цена, и выберите значения. Нет нужного — добавьте своё: его увидите только вы.</span></div><button type="button" class="btn sm" data-act="myVals">Мои значения ('+D.own.length+')</button></div>';
+  sFields().forEach(function(f){
+    var sel=S.sel[f.id]||[],on=sel.length>0||S.open[f.id],vis=f.values.filter(function(v){return !v.hidden;}),own=ownOf(f.id);
+    h+='<div class="char'+(on?" on":"")+'"><div class="chead"><label><input type="checkbox" data-act="sChar" data-v="'+f.id+'"'+(on?" checked":"")+'> '+esc(f.ru)+'</label><small>'+(on?sel.length+" из "+(vis.length+own.length)+" выбрано":"не отличается")+'</small></div>';
+    if(on){
+      h+='<div class="chips">'+vis.map(function(v){var s=sel.indexOf(v.id)>-1;return '<button type="button" class="chip'+(s?" on":"")+(S.justAdded===v.id?" new":"")+'" aria-pressed="'+s+'" data-act="sVal" data-c="'+f.id+'" data-v="'+v.id+'">'+sw(v.c)+esc(v.ru)+'</button>';}).join("");
+      own.forEach(function(o){var s=sel.indexOf(o.id)>-1;
+        h+='<button type="button" class="chip own'+(s?" on":"")+(S.justAdded===o.id?" new":"")+'" aria-pressed="'+s+'" data-act="sVal" data-c="'+f.id+'" data-v="'+o.id+'" title="Своё значение: видите только вы. В фильтрах каталога его нет.">'+sw(o.c)+esc(o.ru)+' <small>своё</small></button>';});
+      h+=(f.custom?'<button type="button" class="chip add" data-act="sAdd" data-v="'+f.id+'">+ Своё значение</button>':'')+'</div>';
+      if(!f.custom)h+='<span class="muted" style="font-size:12.5px">Для этой характеристики свои значения отключены администратором — выберите из списка или <button type="button" class="linkbtn" data-act="noop">напишите в поддержку</button>.</span>';
+    }
+    h+='</div>';
+  });
+  var c=sCount();
+  h+='<div class="combo"><span>Получится</span><b>'+c+'</b><span>'+plural(c,"вариант","варианта","вариантов")+'</span></div>';
+  h+='<div class="row"><span class="muted" style="font-size:12.5px">Нужной характеристики нет в списке (например, «Объём аккумулятора»)? <button type="button" class="linkbtn" data-act="noop">Напишите в поддержку</button> — характеристики добавляет администратор.</span></div>';
+  return sellerShell(h);
+}
+
+/* ---------- buyer ---------- */
+var PRODUCTS=[
+  {n:"Samsung Galaxy A55 5G",s:"TechMarket",p:"4 380 000",vals:[{c:"u1"},{c:"c1"},{c:"u2"}]},
+  {n:"Xiaomi Redmi Note 13",s:"Gadget House",p:"2 650 000",vals:[{c:"c7"},{c:"c2"}]},
+  {n:"iPhone 15 Pro",s:"Mobile Plus",p:"13 900 000",vals:[{c:"x1",ru:"Титановый синий",link:"c7",hex:"#3c4a6b"},{c:"x2",ru:"Натуральный титан",link:null,hex:"#bdb6aa"}]},
+  {n:"Honor X8b",s:"TechMarket",p:"2 990 000",vals:[{c:"u2"}]},
+  {n:"Samsung Galaxy A35",s:"Mobile Plus",p:"3 450 000",vals:[{c:"c8"},{c:"x3",ru:"Мятный",link:"c8",hex:"#a8e6cf"}]}
+];
+function pv(v){var f=fld("color");if(v.ru)return {ru:v.ru,c:v.hex,link:null,own:true};var s=val(f,v.c);if(s)return {ru:s.ru,c:s.c,link:s.id,own:false};var o=D.own.filter(function(x){return x.id===v.c;})[0];return o?{ru:o.ru,c:o.c,link:null,own:true}:null;}
+function bMain(){
+  var f=fld("color"),selc=U.buyer.color;
+  var list=PRODUCTS.map(function(p){var vs=p.vals.map(pv).filter(Boolean);var hit=!selc.length||vs.some(function(v){return v.link&&selc.indexOf(v.link)>-1;});return {p:p,vs:vs,hit:hit};});
+  var shown=list.filter(function(x){return x.hit;});
+  var h='<nav class="side keep" aria-label="Каталог"><div class="logo"><i></i>optom</div><h6>Фильтры</h6><div style="padding:0 8px;display:flex;flex-direction:column;gap:8px"><b style="font-size:13px">Цвет</b><div class="chips">'+
+    f.values.filter(function(v){return !v.hidden;}).map(function(v){var on=selc.indexOf(v.id)>-1;return '<button type="button" class="chip'+(on?" on":"")+'" style="padding:4px 9px;font-size:12.5px" data-act="bCol" data-v="'+v.id+'">'+sw(v.c)+esc(v.ru)+'</button>';}).join("")+
+    '</div><span class="muted" style="font-size:12px">Только значения общего справочника. Своих значений продавцов здесь нет.</span>'+(selc.length?'<button type="button" class="linkbtn" data-act="bReset" style="align-self:flex-start">Сбросить</button>':"")+'</div></nav>'+
+    '<main class="main"><div class="crumbs"><b>Каталог</b> / <span>Смартфоны</span></div><div class="apanel"><h1 style="font-size:18px">Смартфоны <span class="muted" style="font-size:14px;font-weight:400">Найдено товаров: '+shown.length+'</span></h1>'+
+    '<div class="tscroll"><table class="t" style="min-width:640px"><thead><tr><th>Товар</th><th>Цвета на странице товара</th><th>Почему в списке</th></tr></thead><tbody>';
+  list.forEach(function(x){var why;
+    if(!selc.length)why='<span class="muted">фильтр не выбран</span>';
+    else if(x.hit){var m=x.vs.filter(function(v){return v.link&&selc.indexOf(v.link)>-1;})[0];why='<span class="pill g">«'+esc(m.ru)+'» из справочника</span>';}
+    else why=x.vs.some(function(v){return v.own&&!v.link;})?'<span class="pill a">не найден · '+x.vs.filter(function(v){return v.own&&!v.link;}).map(function(v){return "«"+esc(v.ru)+"»";}).join(", ")+' — свои значения, в фильтре их нет</span>':'<span class="muted" style="font-size:12.5px">другой цвет</span>';
+    h+='<tr'+(x.hit?"":' class="hid"')+'><td><b>'+esc(x.p.n)+'</b><div class="muted" style="font-size:12.5px">'+esc(x.p.s)+' · от '+x.p.p+' сум</div></td><td><div class="mchips">'+x.vs.map(function(v){return '<span class="mchip">'+sw(v.c)+esc(v.ru)+'</span>';}).join("")+'</div></td><td>'+why+'</td></tr>';});
+  h+='</tbody></table></div><div class="note info"><span>Строки серым — товары, которые <b>не</b> попали в выдачу при выбранном фильтре (в прототипе показаны для объяснения; покупатель их не видит).</span></div></div></main>';
+  return h;
+}
+
+/* ---------- modal layer ---------- */
+function mFrame(title,body,foot,wide){return '<div class="scrim" data-act="scrim"><div class="modal'+(wide?" wide":"")+'" role="dialog" aria-modal="true" aria-labelledby="mt"><h3 id="mt">'+title+'</h3>'+body+'<div class="row"><span class="spacer"></span>'+foot+'</div></div></div>';}
+function addErr(M){
+  var f=fld(M.field),t=M.text.trim(),shared=f.values.filter(function(v){return !v.hidden;}),own=ownOf(f.id).filter(function(o){return o.id!==M.editId;});
+  var ms=matchIn(shared,t),mo=matchIn(own,t);
+  if(!t)return {err:"Введите значение"};
+  if(M.text.length>MAXLEN)return {err:"Не больше "+MAXLEN+" символов"};
+  if(ms&&ms.kind==="ex")return {err:"Такое значение уже есть в общем списке — выберите его",ms:ms};
+  if(mo&&mo.kind==="ex")return {err:"У вас уже есть это значение",mo:mo};
+  if(!M.editId&&own.length>=CAP)return {err:"Можно добавить не больше "+CAP+" своих значений для характеристики"};
+  return {ms:ms,mo:mo};
+}
+function renderModal(){
+  var M=U.modal;if(!M)return "";
+  if(M.kind==="sAdd"){
+    var f=fld(M.field),R=addErr(M),err=M.showErr?R.err:"",mh="";
+    if(M.text.trim()){
+      if(R.ms&&R.ms.kind==="ex")mh='<div class="match ex">В общем списке уже есть <b>«'+esc(R.ms.item.ru)+'»</b>.<button type="button" class="btn sm" data-act="aPick" data-v="'+R.ms.item.id+'">Выбрать его</button></div>';
+      else if(R.mo&&R.mo.kind==="ex")mh='<div class="match ex">У вас уже есть <b>«'+esc(R.mo.item.ru)+'»</b>.<button type="button" class="btn sm" data-act="aPick" data-v="'+R.mo.item.id+'">Выбрать его</button></div>';
+      else if(R.ms&&R.ms.kind==="sim")mh='<div class="match sim">Похоже на <b>«'+esc(R.ms.item.ru)+'»</b> из общего списка.<button type="button" class="btn sm" data-act="aPick" data-v="'+R.ms.item.id+'">Выбрать «'+esc(R.ms.item.ru)+'»</button>'+'</div>';
+    }
+    var linkSel='<div class="note info"><span>Своё значение покупатель увидит на странице товара. В фильтрах каталога его нет — там только общий список.'+(f.filter?' Если важно, чтобы товар находили через фильтр «'+esc(f.ru)+'», выберите значение из списка.':'')+'</span></div>';
+    return mFrame((M.editId?"Изменить своё значение · ":"Своё значение · ")+esc(f.ru),
+      '<p style="margin:0;color:var(--ink-2)">Значение увидите только вы: в этом и в других своих товарах. Другие продавцы его не видят.</p>'+
+      '<div class="f'+(err?" bad":"")+'"><label for="in-sv">Значение *</label><div class="inp'+(err?" bad":"")+'"><input id="in-sv" data-k="m.text" value="'+esc(M.text)+'" maxlength="60" autocomplete="off" placeholder="'+(f.id==="color"?"Например, Титановый синий":f.id==="mem"?"Например, 16/1 ТБ":"Например, С чехлом и стеклом")+'"></div><span class="sub">'+M.text.length+' / '+MAXLEN+'</span><span class="err">'+(err||"")+'</span></div><div>'+mh+'</div>'+
+      (f.id==="color"?'<div class="f"><label>Цвет образца</label><div class="row"><input type="color" data-k="m.c" value="'+esc(M.c)+'" aria-label="Цвет образца"><span class="muted" style="font-size:12.5px">Кружок рядом с названием на странице товара</span></div></div>':"")+
+      linkSel+
+      (M.uzOpen?'<div class="f"><label for="in-uz">O‘zbekcha</label><div class="inp"><input id="in-uz" data-k="m.uz" value="'+esc(M.uz)+'" maxlength="40"></div><span class="sub">Если не заполнить, на узбекском покажется значение как написано выше.</span></div>':'<button type="button" class="linkbtn" data-act="uzOpen" style="align-self:flex-start">+ Название на узбекском</button><span class="muted" style="font-size:12.5px;margin-top:-6px">Без перевода значение покажется как написано, на всех языках.</span>'),
+      '<button type="button" class="btn" data-act="mClose">Отмена</button><button type="button" class="btn pri" data-act="sAddOk">'+(M.editId?"Сохранить":"Добавить")+'</button>',true);
+  }
+  if(M.kind==="myVals"){
+    var h='<p style="margin:0;color:var(--ink-2)">Ваши значения — видите только вы. Изменение названия применится во всех ваших товарах.</p>';
+    ["mem","color","kit"].forEach(function(fid){var f=fld(fid),own=ownOf(fid);if(!own.length)return;
+      h+='<div class="f"><span class="flab">'+esc(f.ru)+'</span><div class="radl">'+own.map(function(o){
+        return '<label style="cursor:default">'+sw(o.c)+'<b>'+esc(o.ru)+'</b>'+(o.uz?'<span class="muted" style="font-size:12px">'+esc(o.uz)+'</span>':"")+'<small>'+(o.used?"в "+o.used+" "+plural(o.used,"товаре","товарах","товарах"):"не используется")+'</small><button type="button" class="btn ghost sm" data-act="ownEdit" data-v="'+o.id+'">Изменить</button>'+(o.used?"":'<button type="button" class="btn ghost sm danger" data-act="ownDel" data-v="'+o.id+'">Удалить</button>')+'</label>';}).join("")+'</div></div>';});
+    return mFrame("Мои значения",h+'<span class="muted" style="font-size:12.5px">Значение, которое используется в товарах, удалить нельзя <span class="flag">⚑</span>: сначала выберите другое значение в этих товарах.</span>','<button type="button" class="btn pri" data-act="mClose">Готово</button>',true);
+  }
+  if(M.kind==="promote"){var r=reportRows()[M.i],f2=fld(r.field),E={};
+    if(M.showErr){if(!M.ru.trim())E.ru="Укажите значение на русском";else{var d=matchIn(f2.values,M.ru);if(d&&d.kind==="ex")E.ru="Такое значение уже есть в справочнике";}if(!M.uz.trim())E.uz="Укажите на узбекском";}
+    return mFrame("Добавить «"+esc(r.ru)+"» в справочник «"+esc(f2.ru)+"»",
+      '<p style="margin:0;color:var(--ink-2)">Значение станет общим: его увидят все продавцы категорий характеристики, оно появится в фильтре.</p>'+
+      '<div class="f'+(E.ru?" bad":"")+'"><label>Русский *</label><div class="inp'+(E.ru?" bad":"")+'"><input data-k="m.ru" value="'+esc(M.ru)+'"></div><span class="err">'+(E.ru||"")+'</span></div>'+
+      '<div class="f'+(E.uz?" bad":"")+'"><label>O‘zbekcha *</label><div class="inp'+(E.uz?" bad":"")+'"><input data-k="m.uz" value="'+esc(M.uz)+'"></div><span class="err">'+(E.uz||"")+'</span></div>'+
+      '<div class="f"><label>English</label><div class="inp"><input data-k="m.en" value="'+esc(M.en)+'"></div></div>'+
+      (f2.id==="color"?'<div class="f"><label>Цвет образца</label><input type="color" data-k="m.c" value="'+esc(M.c)+'"></div>':"")+
+      '<div class="note ok"><span>У '+r.sellers+' '+plural(r.sellers,"продавца","продавцов","продавцов")+' своё значение «'+esc(r.ru)+'» заменится общим в '+r.products+' '+plural(r.products,"товаре","товарах","товарах")+' <span class="flag">⚑</span>. Продавцы получат уведомление.</span></div>',
+      '<button type="button" class="btn" data-act="mClose">Отмена</button><button type="button" class="btn pri" data-act="promoteOk">Добавить</button>',true);}
+  if(M.kind==="varLock")return mFrame("Нельзя выключить «для вариантов»",'<p style="margin:0;color:var(--ink-2)">Характеристика задаёт варианты в '+fmt(M.n)+' товарах. Если выключить, у этих товаров пропадёт разделение на варианты и их цены.</p><div class="note info"><span>Чтобы новые товары её не использовали, оставьте её для вариантов и скройте ненужные значения. Перенос старых товаров — через техподдержку <span class="flag">⚑</span>.</span></div>','<button type="button" class="btn pri" data-act="mClose">Понятно</button>');
+  if(M.kind==="customOff")return mFrame("Запретить свои значения для «"+esc(M.name)+"»?",'<p style="margin:0;color:var(--ink-2)">После сохранения:</p><ul><li>продавцы не смогут добавлять новые свои значения для этой характеристики</li><li>уже добавленные значения ('+M.n+') останутся в товарах и у продавцов <span class="flag">⚑</span></li><li>частые значения можно перенести в справочник — отчёт «Свои значения продавцов»</li></ul>','<button type="button" class="btn" data-act="mClose">Отмена</button><button type="button" class="btn pri" data-act="customOffOk">Запретить</button>');
+  if(M.kind==="detach")return mFrame("Отключить «"+esc(fld(M.fid).ru)+"» от категории «"+SELLER_CAT+"»?",'<p style="margin:0;color:var(--ink-2)">Характеристика заполнена у товаров этой категории. После отключения:</p><ul><li>продавцы не увидят её в форме новых товаров</li><li>у существующих товаров значения сохранятся и останутся на странице товара</li>'+(fld(M.fid).variant?"<li>варианты, созданные по ней, сохранятся</li>":"")+'<li>фильтр по ней пропадёт в этой категории</li></ul>','<button type="button" class="btn" data-act="mClose">Отмена</button><button type="button" class="btn pri" data-act="detachOk">Отключить</button>');
+  if(M.kind==="pick"){var q=norm(M.q),cands=D.fields.filter(function(f){return f.cats.indexOf(SELLER_CAT)<0&&(!q||norm(f.ru+f.uz+f.en).indexOf(q)>-1);});
+    return mFrame("Подключить характеристику к «"+SELLER_CAT+"»",
+      '<label class="search">⌕<input data-k="m.q" value="'+esc(M.q)+'" placeholder="Поиск в справочнике"></label><div class="radl">'+
+      (cands.length?cands.map(function(f){return '<label style="cursor:default"><b>'+esc(f.ru)+'</b>'+(f.variant?'<span class="pill v">для вариантов</span>':"")+'<small>в '+f.cats.length+' '+plural(f.cats.length,"категории","категориях","категориях")+'</small><button type="button" class="btn sm" data-act="attach" data-v="'+f.id+'">Подключить</button></label>';}).join(""):'<span class="muted">Не найдено. Создайте новую характеристику — она сразу подключится к категории.</span>')+'</div>',
+      '<button type="button" class="btn ghost" data-act="newFromCat">+ Создать новую</button><button type="button" class="btn" data-act="mClose">Закрыть</button>',true);}
+  return "";
+}
+function renderLayer(){var h=renderModal();if(U.toast)h+='<div class="toast" role="status">'+U.toast+'</div>';document.getElementById("layer").innerHTML=h;}
+var tT;function toast(m){U.toast=m;renderLayer();clearTimeout(tT);tT=setTimeout(function(){U.toast=null;renderLayer();},3400);}
+
+/* ---------- render ---------- */
+function render(){
+  var a=document.getElementById("app");
+  if(U.surface==="seller")a.innerHTML=sMain();
+  else if(U.surface==="buyer")a.innerHTML=bMain();
+  else a.innerHTML=U.view==="form"?aForm():U.view==="cat"?aCat():U.view==="custom"?aCustom():aList();
+  renderLayer();
+}
+function liveErrs(){
+  if(!U.showErr||!U.form)return;var m={};formErrors().forEach(function(e){if(!m[e.k])m[e.k]=e.msg;});
+  document.querySelectorAll("#app [data-err]").forEach(function(el){el.textContent=m[el.getAttribute("data-err")]||"";});
+  document.querySelectorAll("#app [data-wrap]").forEach(function(el){el.classList.toggle("bad",!!m[el.getAttribute("data-wrap")]);});
+}
+function focusIn(sel){setTimeout(function(){var el=document.querySelector(sel);if(el){el.focus();if(el.setSelectionRange){var n=el.value.length;el.setSelectionRange(n,n);}}},0);}
+function keepFocus(sel,pos){var el=document.querySelector(sel);if(el){el.focus();try{el.setSelectionRange(pos,pos);}catch(e){}}}
+
+/* ---------- events ---------- */
+document.addEventListener("click",function(e){
+  var nv=e.target.closest("[data-nav]");if(nv&&!e.target.closest("[data-act]")){var k=nv.getAttribute("data-nav");if(k){U.view=k;U.form=null;U.showErr=false;render();}return;}
+  var go=e.target.closest("[data-go]");if(go){var el=document.getElementById("in-"+go.getAttribute("data-go"))||document.querySelector('[data-f="'+go.getAttribute("data-go")+'"]');if(el){el.scrollIntoView({block:"center",behavior:"smooth"});if(el.focus)el.focus({preventScroll:true});}return;}
+  var b=e.target.closest("[data-act]");if(!b)return;
+  var a=b.getAttribute("data-act"),v=b.getAttribute("data-v"),F=U.form,M=U.modal,S=U.seller;
+  if(a==="scrim"){if(e.target===b){U.modal=null;renderLayer();}return;}
+  if(a==="noop"){toast("Прототип: открывается чат с поддержкой");return;}
+  if(a==="mClose"){U.modal=null;renderLayer();return;}
+  /* admin list */
+  if(a==="onlyVar"){U.onlyVar=!U.onlyVar;render();return;}
+  if(a==="aNew"){U.form=newForm();U.view="form";U.showErr=false;render();focusIn('[data-k="f.ru"]');return;}
+  if(a==="aEdit"){U.form=editForm(fld(v));U.view="form";U.showErr=false;render();window.scrollTo(0,0);return;}
+  /* form */
+  if(a==="ftog"){if(v==="variant"&&F.variant&&F.mode==="edit"&&F.varUse>0){U.modal={kind:"varLock",n:F.varUse};renderLayer();return;}
+    if(v==="custom"&&F.custom&&F.mode==="edit"){var n=D.own.filter(function(o){return o.field===F.fid;}).length+D.others.filter(function(o){return o.field===F.fid;}).reduce(function(s,o){return s+o.sellers;},0);if(n){U.modal={kind:"customOff",n:n,name:F.ru};renderLayer();return;}}
+    F[v]=!F[v];render();return;}
+  if(a==="customOffOk"){F.custom=false;U.modal=null;render();return;}
+  if(a==="fcat"){var i=F.cats.indexOf(v);if(i>-1)F.cats.splice(i,1);else F.cats.push(v);render();return;}
+  if(a==="vAdd"){F.values.push({id:null,ru:"",uz:"",en:"",c:F.isColor?"#cccccc":null,used:0,hidden:false});render();focusIn('[data-k="v:'+(F.values.length-1)+':ru"]');return;}
+  if(a==="vDel"){F.values.splice(+v,1);render();return;}
+  if(a==="vHide"){F.values[+v].hidden=!F.values[+v].hidden;render();if(F.values[+v].hidden)toast("Скрыто: продавцы не выберут его в новых товарах. В "+fmt(F.values[+v].used)+" товарах значение останется.");return;}
+  if(a==="vUp"||a==="vDown"){var j=+v,k2=a==="vUp"?j-1:j+1,t=F.values[j];F.values[j]=F.values[k2];F.values[k2]=t;render();return;}
+  if(a==="bulkToggle"){F.bulkOpen=!F.bulkOpen;render();if(F.bulkOpen)focusIn("#bulk");return;}
+  if(a==="bulkAdd"){var lines=F.bulk.split(/\n/).map(function(s){return s.trim();}).filter(Boolean),added=0,skip=0;
+    lines.forEach(function(s){var m=matchIn(F.values,s);if(m&&m.kind==="ex"){skip++;return;}F.values.push({id:null,ru:s,uz:"",en:"",c:F.isColor?"#cccccc":null,used:0,hidden:false});added++;});
+    F.bulk="";F.bulkOpen=false;render();toast("Добавлено: "+added+(skip?" · пропущено повторов: "+skip:"")+". Заполните переводы.");return;}
+  if(a==="fCancel"){var bk=U.backTo||"list";U.backTo=null;U.form=null;U.view=bk;U.showErr=false;render();return;}
+  if(a==="fSave"){var E=formErrors();if(E.length){U.showErr=true;render();var eb=document.getElementById("ebanner");if(eb)eb.scrollIntoView({block:"start",behavior:"smooth"});return;}
+    if(F.mode==="new"){var id="f"+(D.nextId++);D.fields.push({id:id,ru:F.ru.trim(),uz:F.uz.trim(),en:F.en.trim(),variant:F.variant,filter:F.filter,custom:F.custom,varUse:0,cats:F.cats.slice(),values:F.values.map(function(x,i){return V(id+"v"+i,x.ru.trim(),x.uz.trim(),x.en.trim(),0,x.c);})});D.catOrder.push(id);toast("Характеристика «"+esc(F.ru.trim())+"» создана"+(F.cats.length?" и подключена к "+F.cats.length+" "+plural(F.cats.length,"категории","категориям","категориям"):"")+".");}
+    else{var f=fld(F.fid);f.ru=F.ru.trim();f.uz=F.uz.trim();f.en=F.en.trim();f.variant=F.variant;f.filter=F.filter;f.custom=F.custom;f.cats=F.cats.slice();
+      f.values=F.values.map(function(x){if(x.id)return {id:x.id,ru:x.ru.trim(),uz:x.uz.trim(),en:x.en.trim(),used:x.used,c:x.c,hidden:x.hidden};return V(f.id+"n"+(D.nextId++),x.ru.trim(),x.uz.trim(),x.en.trim(),0,x.c);});toast("Сохранено. Изменения видны продавцам и покупателям сразу.");}
+    var back=U.backTo||"list";U.backTo=null;U.form=null;U.showErr=false;U.view=back;render();return;}
+  /* category */
+  if(a==="cUp"||a==="cDown"){var o=D.catOrder,ix=o.indexOf(v),vis=o.filter(function(id){return fld(id).cats.indexOf(SELLER_CAT)>-1;}),p=vis.indexOf(v),nb=vis[a==="cUp"?p-1:p+1],jx=o.indexOf(nb);o[ix]=nb;o[jx]=v;render();return;}
+  if(a==="cDetach"){U.modal={kind:"detach",fid:v};renderLayer();return;}
+  if(a==="detachOk"){var fd=fld(M.fid);fd.cats.splice(fd.cats.indexOf(SELLER_CAT),1);U.modal=null;render();toast("«"+esc(fd.ru)+"» отключена от категории «"+SELLER_CAT+"»");return;}
+  if(a==="catPick"){U.modal={kind:"pick",q:""};renderLayer();focusIn('[data-k="m.q"]');return;}
+  if(a==="attach"){var fa=fld(v);fa.cats.push(SELLER_CAT);if(D.catOrder.indexOf(v)<0)D.catOrder.push(v);U.modal=null;render();toast("«"+esc(fa.ru)+"» подключена к «"+SELLER_CAT+"»");return;}
+  if(a==="newFromCat"){U.modal=null;U.form=newForm([SELLER_CAT]);U.backTo="cat";U.view="form";U.showErr=false;render();focusIn('[data-k="f.ru"]');return;}
+  /* report */
+  if(a==="promote"){var r=reportRows()[+v];U.modal={kind:"promote",i:+v,ru:r.ru,uz:"",en:"",c:"#3c4a6b",showErr:false};renderLayer();return;}
+  if(a==="promoteOk"){M.showErr=true;var rr=reportRows()[M.i],fp=fld(rr.field),dp=matchIn(fp.values,M.ru);if(!M.ru.trim()||!M.uz.trim()||(dp&&dp.kind==="ex")){renderLayer();return;}
+    var nvv=V("n"+(D.nextId++),M.ru.trim(),M.uz.trim(),M.en.trim(),rr.products,fp.id==="color"?M.c:null);fp.values.push(nvv);
+    var key=norm(rr.ru);D.others=D.others.filter(function(o){return !(o.field===rr.field&&norm(o.ru)===key);});
+    D.own.filter(function(o){return o.field===rr.field&&norm(o.ru)===key;}).forEach(function(o){var s=S.sel[o.field]||[],ii=s.indexOf(o.id);if(ii>-1)s[ii]=nvv.id;});
+    D.own=D.own.filter(function(o){return !(o.field===rr.field&&norm(o.ru)===key);});
+    U.modal=null;render();toast("«"+esc(nvv.ru)+"» добавлено в справочник. У "+rr.sellers+" "+plural(rr.sellers,"продавца","продавцов","продавцов")+" своё значение заменено общим.");return;}
+  /* seller */
+  if(a==="sChar"){if((S.sel[v]||[]).length||S.open[v]){S.sel[v]=[];S.open[v]=false;}else S.open[v]=true;render();return;}
+  if(a==="sVal"){var c=b.getAttribute("data-c"),arr=S.sel[c]||(S.sel[c]=[]),ii2=arr.indexOf(v);if(ii2>-1)arr.splice(ii2,1);else arr.push(v);S.justAdded=null;render();return;}
+  if(a==="sAdd"){U.modal={kind:"sAdd",field:v,text:"",uz:"",uzOpen:false,link:"",c:"#888888",showErr:false,editId:null};renderLayer();focusIn("#in-sv");return;}
+  if(a==="uzOpen"){M.uzOpen=true;renderLayer();focusIn("#in-uz");return;}
+  if(a==="aLinkTo"){M.link=v;renderLayer();return;}
+  if(a==="aPick"){var fpk=M.field,ar=S.sel[fpk]||(S.sel[fpk]=[]);S.open[fpk]=true;if(ar.indexOf(v)<0)ar.push(v);S.justAdded=v;U.modal=null;render();toast("Выбрано существующее значение");return;}
+  if(a==="sAddOk"){M.showErr=true;var R=addErr(M);if(R.err){renderLayer();focusIn("#in-sv");return;}
+    if(M.editId){var oe=D.own.filter(function(o){return o.id===M.editId;})[0];oe.ru=M.text.trim();oe.uz=M.uz.trim();oe.link=M.link||null;if(M.field==="color")oe.c=M.c;U.modal={kind:"myVals"};render();toast("Сохранено во всех ваших товарах ("+oe.used+")");return;}
+    var nid="u"+(100+D.nextId++);D.own.push({id:nid,field:M.field,ru:M.text.trim(),uz:M.uz.trim(),c:M.field==="color"?M.c:null,link:M.link||null,used:0});
+    (S.sel[M.field]||(S.sel[M.field]=[])).push(nid);S.open[M.field]=true;S.justAdded=nid;U.modal=null;render();toast("Своё значение добавлено. Его видите только вы — в любом своём товаре.");return;}
+  if(a==="myVals"){U.modal={kind:"myVals"};renderLayer();return;}
+  if(a==="ownEdit"){var o2=D.own.filter(function(o){return o.id===v;})[0];U.modal={kind:"sAdd",field:o2.field,text:o2.ru,uz:o2.uz,uzOpen:!!o2.uz,link:o2.link||"",c:o2.c||"#888888",showErr:false,editId:o2.id};renderLayer();focusIn("#in-sv");return;}
+  if(a==="ownDel"){D.own=D.own.filter(function(o){return o.id!==v;});Object.keys(S.sel).forEach(function(k){var s=S.sel[k],ix2=s.indexOf(v);if(ix2>-1)s.splice(ix2,1);});render();toast("Значение удалено");return;}
+  if(a==="sContinue"){var cc=sCount();if(cc<2){toast("Выберите значения хотя бы для двух вариантов");return;}toast("Дальше — шаг 2 «Цены» (см. P-PT1). Вариантов: "+cc);return;}
+  /* buyer */
+  if(a==="bCol"){var bc=U.buyer.color,bi=bc.indexOf(v);if(bi>-1)bc.splice(bi,1);else bc.push(v);render();return;}
+  if(a==="bReset"){U.buyer.color=[];render();return;}
+});
+document.addEventListener("input",function(e){
+  var t=e.target,k=t.getAttribute("data-k");if(!k)return;var F=U.form,M=U.modal;
+  if(k==="q"){U.q=t.value;var pos=t.selectionStart;render();keepFocus('[data-k="q"]',pos);return;}
+  if(k==="catQ"){F.catQ=t.value;var p2=t.selectionStart;render();keepFocus('[data-k="catQ"]',p2);return;}
+  if(k==="bulk"){F.bulk=t.value;return;}
+  if(k.indexOf("f.")===0){F[k.slice(2)]=t.value;liveErrs();return;}
+  if(k.indexOf("v:")===0){var pr=k.split(":");F.values[+pr[1]][pr[2]]=t.value;liveErrs();
+    if(pr[2]==="ru"){var row=t.closest("td"),rn=row&&row.querySelector(".rn"),vv=F.values[+pr[1]];if(vv.used&&vv.orig){if(vv.ru!==vv.orig&&!rn){row.insertAdjacentHTML("beforeend",'<span class="rn">Название изменится в '+fmt(vv.used)+' товарах</span>');}else if(vv.ru===vv.orig&&rn)rn.remove();}}
+    return;}
+  if(k==="m.text"){M.text=t.value;M.showErr=false;var p3=t.selectionStart;renderLayer();keepFocus("#in-sv",p3);return;}
+  if(k==="m.q"){M.q=t.value;var p4=t.selectionStart;renderLayer();keepFocus('[data-k="m.q"]',p4);return;}
+  if(k==="m.c"){M.c=t.value;return;}
+  if(k.indexOf("m.")===0){M[k.slice(2)]=t.value;return;}
+});
+document.addEventListener("change",function(e){var t=e.target;if(t.getAttribute("data-k")==="m.link"){U.modal.link=t.value;renderLayer();}});
+
+/* ---------- scenarios ---------- */
+function goAdmin(view){U.surface="admin";U.view=view;}
+function sAddModal(field,text,link){U.modal={kind:"sAdd",field:field,text:text,uz:"",uzOpen:false,link:link||"",c:"#3c4a6b",showErr:false,editId:null};}
+var SC=[
+ {g:"Админ-панель",id:"a-list",name:"А1. Справочник характеристик",set:function(){goAdmin("list");},notes:[
+   "Where shared values are created: one global directory of characteristics (today the admin panel calls them «Фильтры»; ⚑ proposed name «Характеристики», because they now drive filters, the product form and variants).",
+   "A characteristic is created once and attached to many categories. «Цвет» is used in 10 categories, so «Чёрный» is one value for phones, fridges and sneakers: one translation, one filter chip.",
+   "New columns: «Для вариантов» (⚑ new flag) and «Свои значения продавцов» (⚑ new flag: may sellers add their own private values). «Фильтр для покупателей» is the existing IsVisible from US-AF-5.5-03.",
+   "No deletion of characteristics or used values (BR-FL12): they are hidden, so products never lose data. Click a row to edit."]},
+ {g:"Админ-панель",id:"a-new",name:"А2. Новая характеристика · заполнение",set:function(){goAdmin("form");U.form=newForm(["Смартфоны"]);U.form.ru="Объём аккумулятора";U.form.uz="Akkumulyator sig‘imi";U.form.en="Battery capacity";U.form.values=[{id:null,ru:"4 000 мА·ч",uz:"4 000 mA·s",en:"4,000 mAh",used:0,hidden:false},{id:null,ru:"5 000 мА·ч",uz:"5 000 mA·s",en:"5,000 mAh",used:0,hidden:false},{id:null,ru:"6 000 мА·ч",uz:"",en:"",used:0,hidden:false}];U.form.variant=false;},notes:[
+   "One screen: name in RU / UZ (required) and EN (⚑ optional), the values table with a translation per value, three usage switches and the categories.",
+   "«+ Добавить значение» adds a row; «Добавить списком» pastes many at once (repeats are skipped). ↑ ↓ set the order sellers and buyers see.",
+   "«Продавцы могут добавлять свои значения» is on by default ⚑: sellers can always add a private value when the shared list lacks one.",
+   "Try «Создать»: the third value has no Uzbek translation, so the form shows the error banner (see А3)."]},
+ {g:"Админ-панель",id:"a-err",name:"А3. Новая характеристика · ошибки",set:function(){goAdmin("form");U.form=newForm([]);U.form.ru="Цвет";U.form.values=[{id:null,ru:"Бирюзовый",uz:"Firuza",en:"",used:0,hidden:false,c:"#30d5c8"},{id:null,ru:"бирюзовый ",uz:"",en:"",used:0,hidden:false,c:"#30d5c8"},{id:null,ru:"",uz:"",en:"",used:0,hidden:false}];U.form.isColor=true;U.showErr=true;},notes:[
+   "Errors on «Создать»: a banner lists each problem and jumps to the field; fields are marked in place and clear live.",
+   "Duplicates are found after normalising: case, spaces, «ё/е», «GB/ГБ», «TB/ТБ» and punctuation are ignored, so «бирюзовый » repeats «Бирюзовый». The same check runs when a seller adds a private value.",
+   "A characteristic name that already exists («Цвет») is an error: attach the existing one to the category instead (А5).",
+   "Limits ⚑: name and value up to 40 characters; RU and UZ required, EN optional."]},
+ {g:"Админ-панель",id:"a-edit",name:"А4. Изменить характеристику в работе",set:function(){goAdmin("form");U.form=editForm(fld("mem"));U.form.values[4].hidden=true;},notes:[
+   "Each value shows how many products use it. A used value has «Скрыть» instead of «Удалить»: it is not offered in new products, existing products keep it (12/512 ГБ here).",
+   "Renaming a used value shows «Название изменится в N товарах»: the value is one record, so every product updates at once.",
+   "Switching off «для вариантов» is blocked while products use it as a variant. Switching off «свои значения» asks first: sellers can no longer add new ones; ⚑ the ones already added stay.",
+   "Changing categories here changes the shared characteristic for all its categories; use the category page (А5) for one category."]},
+ {g:"Админ-панель",id:"a-cat",name:"А5. Категория «Смартфоны» · подключённые характеристики",set:function(){goAdmin("cat");},notes:[
+   "Which characteristics a category uses, in what order (the order of the seller's product form and of the buyer's filters).",
+   "«+ Подключить характеристику» searches the global directory first, so the admin reuses «Цвет» rather than creating a second copy. «+ Создать новую» opens А2 with the category ticked.",
+   "«Отключить» removes the characteristic from this category only; products keep their values.",
+   "Existing design: the 13-screen «Добавить фильтр» flow (US-AF-5.5-02); this view keeps its idea and adds order and the variant flag."]},
+ {g:"Админ-панель",id:"a-custom",name:"А6. Свои значения продавцов · отчёт",set:function(){goAdmin("custom");},notes:[
+   "No approval queue: private values work immediately. This report is only for keeping the shared list complete.",
+   "Rows group the same value across sellers (after normalising). «Кандидат в справочник» ⚑ = used by 5 sellers or more.",
+   "Own values are never in catalogue filters (decided 13.11.2026). The report shows which ones are common enough to become shared values, which then also appear in the filter.",
+   "«Добавить в справочник» makes the value shared (admin adds UZ / EN). ⚑ Proposed: every seller's private value with the same text is replaced by the shared one, and they get a notification. Try it with «Титановый синий»."]},
+ {g:"Кабинет продавца",id:"s-pick",name:"П1. Разная цена · общие и свои значения",set:function(){U.surface="seller";fld("mem").values[4].hidden=true;U.seller.sel={mem:["m1","m3","m4"],color:["c1","c2","u1"],kit:[]};},notes:[
+   "Seller side of «Разная цена» step 1 (P-PT1 scenarios 3–4). Shared values come first; the seller's own values follow, marked «своё».",
+   "«+ Своё значение» adds a value only this seller sees, reusable in all their products. No approval.",
+   "Own values are marked «своё». Buyers see them on the product page but not in catalogue filters: only the shared list is there (decided 13.11.2026).",
+   "«Мои значения» lists and edits the seller's own values (П4). Hidden shared values (12/512 ГБ) are not offered in new products."]},
+ {g:"Кабинет продавца",id:"s-dup",name:"П2. Своё значение · уже есть в общем списке",set:function(){U.surface="seller";U.seller.sel={mem:["m1","m3"],color:["c1","c2"],kit:[]};sAddModal("mem","8/128 gb");},notes:[
+   "As the seller types, the value is checked against the shared list and their own values. «8/128 gb» equals «8/128 ГБ» after normalising, so «Добавить» is blocked and the dialog offers «Выбрать его».",
+   "This stops most near-duplicates at the source (8/128GB, 8 / 128 ГБ…), so filters do not split.",
+   "Try «Светло-голубой» in «Цвет»: it is similar to «Голубой», so the dialog offers «Выбрать «Голубой»». The seller may still add their own name."]},
+ {g:"Кабинет продавца",id:"s-new",name:"П3. Своё значение · новый цвет",set:function(){U.surface="seller";U.seller.sel={mem:["m1","m3"],color:["c1","c2"],kit:[]};U.seller.open.color=true;sAddModal("color","Космический серый");},notes:[
+   "A new colour: name and swatch colour. The dialog states plainly that own values are not in catalogue filters, and suggests picking a shared value if filter visibility matters.",
+   "No filter link (removed 13.11.2026): it was hard to understand and made no sense for exact values such as «16/1 ТБ».",
+   "Uzbek is optional: without it the value is shown as typed in every language.",
+   "Limits ⚑: 40 characters; up to 50 own values per characteristic per seller."]},
+ {g:"Кабинет продавца",id:"s-mine",name:"П4. Мои значения",set:function(){U.surface="seller";U.seller.sel={mem:["m1","m3"],color:["c1","u1","u2"],kit:[]};U.modal={kind:"myVals"};},notes:[
+   "The seller's own values in one place: Uzbek name if given, how many products use each, edit and delete.",
+   "Editing a name applies to all the seller's products at once (the value is one record).",
+   "⚑ A value used in products cannot be deleted; an unused one can.",
+   "Other sellers never see these values; the admin sees them only in the report (А6)."]},
+ {g:"Покупатель",id:"b-filter",name:"Б1. Каталог · фильтр «Цвет» и свои значения",set:function(){U.surface="buyer";},notes:[
+   "What a private value means for buyers: the colour filter offers shared values only, and only shared values match it.",
+   "With «Синий» selected only Redmi Note 13 is found. Galaxy A55 («Титановый синий») and iPhone 15 Pro (another seller's «Титановый синий») are not: those are own values.",
+   "A product is still found through any of its shared values: tick «Белый» and Galaxy A55 appears; tick «Зелёный» and Galaxy A35 appears (its «Мятный» variant is the seller's own).",
+   "On the product page buyers see the sellers' own names in the variant picker as usual. To bring a popular own value into the filter, the admin adds it to the shared list (А6)."]}
+];
+var sel=document.getElementById("scn");
+var groups={};SC.forEach(function(s){(groups[s.g]=groups[s.g]||[]).push(s);});
+sel.innerHTML=Object.keys(groups).map(function(g){return '<optgroup label="'+g+'">'+groups[g].map(function(s){return '<option value="'+s.id+'">'+s.name+'</option>';}).join("")+'</optgroup>';}).join("");
+function load(id){var s=SC.filter(function(x){return x.id===id;})[0]||SC[0];D=baseData();U=baseUI();s.set();sel.value=s.id;
+  document.getElementById("notes").innerHTML='<span class="eyb">Notes · '+esc(s.name)+'</span><h2>What this state shows</h2><ul>'+s.notes.map(function(n){return '<li>'+esc(n)+'</li>';}).join("")+'</ul>'+
+  '<span class="eyb" style="margin-top:6px">Whole prototype · v0.3</span><ul><li>Rule (decided by Akbar 13.11.2026): the admin owns the shared values; a seller can add «Своё значение», which only that seller sees and uses, with no approval.</li><li>Own values are shown on the product page but never in catalogue filters (decided 13.11.2026); popular ones are added to the shared list by the admin.</li><li>⚑ marks a BA proposal that is not decided yet.</li><li>Data ⚑ (to confirm with the tech lead): existing CategoryField gets two flags, IsVariant and AllowSellerValues; a new SellerFieldValue record (seller, field, text, optional UZ text, swatch); a variant points to a shared value ID or a seller value ID, never free text.</li><li>Uzbek texts are drafts for a native-speaker check.</li></ul>';
+  render();window.scrollTo(0,0);}
+sel.addEventListener("change",function(){load(sel.value);try{history.replaceState(null,"","#"+sel.value);}catch(e){}});
+document.getElementById("reset").addEventListener("click",function(){load(sel.value);});
+window.addEventListener("hashchange",function(){load(location.hash.slice(1));});
+load(location.hash.slice(1));
+})();
+</script>

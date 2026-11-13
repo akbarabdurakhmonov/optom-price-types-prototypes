@@ -1,0 +1,997 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P-PT3 Negotiation: chat, offer, cart, order</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>/* Optom.uz prototype base — colours and components taken from the Figma exports (Seller website, Buyer website, Super Admin Old) */
+:root{
+  --green:#00a028; --green-600:#008a22; --green-50:#e6f6ea; --green-100:#cdeed5;
+  --ink:#1b1c1f; --ink-2:#38383b; --muted:#6b7079; --muted-2:#8b9189; --line:#e7e9ec; --line-2:#d9dce1;
+  --bg:#f3f4f6; --card:#ffffff; --red:#d92d20; --red-50:#fdecec; --amber:#ca8504; --amber-50:#fef7c3;
+  --blue:#0c75ed; --blue-50:#e8f2fe; --violet:#7a5af8; --violet-50:#f1edff;
+  --radius:12px; --radius-sm:8px;
+  --font:"Onest",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--font);font-size:14px;line-height:1.45;color:var(--ink);background:var(--bg)}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--green);text-decoration:none}
+/* ---- prototype harness bar ---- */
+.pbar{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:8px 16px;background:#14161a;color:#e9ecef;font-size:12.5px}
+.pbar b{color:#fff;font-weight:600}
+.pbar .tag{background:#2a2e35;border-radius:6px;padding:2px 8px;color:#c6cbd2}
+.pbar select{background:#23272e;border:1px solid #3a3f47;border-radius:6px;color:#fff;padding:4px 8px;max-width:420px}
+.pbar .sp{flex:1}
+.pbar button{background:#23272e;border:1px solid #3a3f47;border-radius:6px;color:#fff;padding:4px 10px;cursor:pointer}
+.pbar button.on{background:var(--green);border-color:var(--green)}
+.notes{position:fixed;right:16px;bottom:16px;width:380px;max-height:60vh;overflow:auto;z-index:60;background:#fffef5;border:1px solid #eadf9f;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.18);padding:14px 16px;font-size:12.5px;display:none}
+.notes.show{display:block}
+.notes h4{margin:0 0 6px;font-size:13px}
+.notes ul{margin:4px 0 0 16px;padding:0}
+.notes li{margin:3px 0}
+.notes .src{color:#6b6200;font-size:11.5px;margin-top:8px}
+/* ---- seller / admin shell ---- */
+.shell{display:grid;grid-template-columns:232px 1fr;min-height:calc(100vh - 40px)}
+.side{padding:18px 14px;display:flex;flex-direction:column;gap:2px}
+.logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:26px;letter-spacing:-.5px;margin:0 6px 22px;color:var(--ink)}
+.logo svg{flex:none}
+.side .grp{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin:14px 10px 6px}
+.nav{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;color:var(--ink-2);cursor:default}
+.nav.on{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.05);color:var(--ink);font-weight:500}
+.nav svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;opacity:.8}
+.side .me{margin-top:auto;background:#fff;border-radius:12px;padding:10px;display:flex;gap:10px;align-items:center}
+.ava{width:34px;height:34px;border-radius:50%;background:#d7dbe0;display:grid;place-items:center;font-weight:600;color:#555;flex:none}
+.me small{display:block;color:var(--green);font-size:12px}
+.main{padding:16px 24px 40px 8px;min-width:0}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.iconbtn{width:34px;height:34px;border-radius:9px;background:#fff;border:1px solid var(--line);display:grid;place-items:center}
+.crumbs{color:var(--muted);font-size:13px;display:flex;gap:8px;align-items:center}
+.crumbs b{color:var(--ink);font-weight:500}
+.top .sp{flex:1}
+.lang{background:#fff;border:1px solid var(--line);border-radius:9px;padding:6px 12px;font-size:13px}
+.h1{font-size:26px;font-weight:600;margin:6px 0 14px;display:flex;align-items:center;gap:10px}
+/* ---- components ---- */
+.card{background:var(--card);border-radius:var(--radius);padding:20px 22px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.card+.card{margin-top:12px}
+.card h3{margin:0 0 4px;font-size:18px;font-weight:600}
+.sub{color:var(--muted);margin:0}
+.row{display:flex;gap:12px;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.sec{display:grid;grid-template-columns:240px 1fr;gap:24px;padding:20px 0;border-top:1px solid var(--line)}
+.sec>.lbl{font-weight:600}
+.sec>.lbl .sub{font-weight:400;font-size:13px;margin-top:4px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.field label{font-size:13px;font-weight:500}
+.inp{border:1px solid var(--line-2);border-radius:10px;padding:10px 12px;background:#fff;outline:none;width:100%}
+.inp:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-50)}
+.inp.err{border-color:var(--red)}
+.inp[disabled]{background:#f6f7f9;color:var(--muted)}
+.err-t{color:var(--red);font-size:12.5px}
+.hint{color:var(--muted);font-size:12.5px}
+.btn{border:1px solid transparent;border-radius:10px;padding:10px 18px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn.pri{background:var(--green);color:#fff}
+.btn.pri:hover{background:var(--green-600)}
+.btn.pri[disabled]{background:#9fd8ad;cursor:not-allowed}
+.btn.out{background:#fff;border-color:var(--line-2);color:var(--ink)}
+.btn.soft{background:var(--green-50);color:var(--green)}
+.btn.dan{background:var(--red-50);color:var(--red)}
+.btn.danfill{background:var(--red);color:#fff}
+.btn.link{background:none;padding:6px 4px;color:var(--green)}
+.btn.sm{padding:6px 12px;font-size:13px;border-radius:8px}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:3px 9px;font-size:12.5px;font-weight:500;border:1px solid transparent}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.g{background:var(--green-50);color:var(--green);border-color:var(--green-100)}
+.pill.v{background:var(--violet-50);color:var(--violet);border-color:#ddd3ff}
+.pill.a{background:#fff6e0;color:#b54708;border-color:#fde7b0}
+.pill.r{background:var(--red-50);color:var(--red);border-color:#f9c9c4}
+.pill.n{background:#f1f2f4;color:var(--ink-2);border-color:var(--line)}
+.pill.b{background:var(--blue-50);color:var(--blue);border-color:#c9e0fd}
+.alert{border-radius:12px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;border-left:4px solid}
+.alert .ic{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;flex:none}
+.alert.w{background:var(--amber-50);border-color:var(--amber)} .alert.w .ic{background:var(--amber)}
+.alert.e{background:var(--red-50);border-color:var(--red)} .alert.e .ic{background:var(--red)}
+.alert.i{background:var(--blue-50);border-color:var(--blue)} .alert.i .ic{background:var(--blue)}
+.alert.s{background:var(--green-50);border-color:var(--green)} .alert.s .ic{background:var(--green)}
+.alert b{display:block;margin-bottom:2px}
+.toggle{position:relative;width:40px;height:22px;border-radius:12px;background:#d0d4da;border:none;cursor:pointer;flex:none;transition:.15s}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.toggle.on{background:var(--green)}
+.toggle.on::after{left:21px}
+.toggle[disabled]{opacity:.45;cursor:not-allowed}
+.chk{display:flex;gap:10px;align-items:flex-start;cursor:pointer;margin:8px 0}
+.chk input{width:18px;height:18px;accent-color:var(--green);margin-top:2px;flex:none}
+table.t{width:100%;border-collapse:collapse}
+table.t th{background:#f6f7f9;text-align:left;font-size:12.5px;font-weight:500;color:var(--muted);padding:10px 12px}
+table.t td{border-top:1px solid var(--line);padding:12px;vertical-align:middle}
+.kv{display:flex;gap:10px;padding:12px 0;border-top:1px solid var(--line);align-items:flex-start}
+.kv:first-of-type{border-top:none}
+.kv .k{color:var(--muted)}
+.kv svg{width:20px;height:20px;stroke:var(--muted);fill:none;stroke-width:1.6;flex:none;margin-top:1px}
+.modal-bg{position:fixed;inset:0;background:rgba(16,18,22,.45);display:grid;place-items:center;z-index:40;padding:20px}
+.modal{background:#fff;border-radius:16px;width:min(560px,100%);max-height:90vh;overflow:auto;padding:22px 24px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.modal h3{margin:0 0 6px;font-size:19px}
+.modal .acts{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1b1c1f;color:#fff;border-radius:10px;padding:10px 16px;z-index:70;box-shadow:0 10px 30px rgba(0,0,0,.25);font-size:13.5px}
+.digits{display:flex;gap:6px;align-items:flex-end}
+.digit{background:#eceef1;border-radius:10px;width:42px;height:52px;display:grid;place-items:center;font-size:24px;font-weight:600}
+.dsep{font-size:24px;font-weight:600;padding:0 4px 12px}
+.ycard{border:1.5px solid var(--line-2);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:center;cursor:pointer;background:#fff}
+.ycard.on{border-color:var(--green);background:var(--green-50)}
+.ycard .r{width:18px;height:18px;border-radius:50%;border:2px solid var(--line-2);flex:none}
+.ycard.on .r{border:5px solid var(--green)}
+.ycard[aria-disabled=true]{opacity:.5;cursor:not-allowed}
+.yglogo{font-weight:700;letter-spacing:-.3px}
+.yglogo i{font-style:italic;font-weight:800}
+.code-big{font-size:30px;letter-spacing:6px;font-weight:700;background:#f6f7f9;border-radius:10px;padding:8px 14px;display:inline-block}
+.steps{display:flex;justify-content:space-between;position:relative;margin:6px 0 4px}
+.steps::before{content:"";position:absolute;left:20px;right:20px;top:17px;height:2px;background:var(--line)}
+.step{position:relative;text-align:center;flex:1;color:var(--muted);font-size:13px}
+.step .dot{width:36px;height:36px;border-radius:10px;margin:0 auto 6px;background:#fff;border:1.5px solid var(--line-2);display:grid;place-items:center}
+.step.on{color:var(--green);font-weight:500}
+.step.on .dot{background:var(--green-50);border-color:var(--green)}
+.timeline .it{display:flex;gap:12px;padding:8px 0}
+.timeline .it .d{width:30px;height:30px;border-radius:50%;background:#f1f2f4;display:grid;place-items:center;flex:none;font-size:13px}
+.timeline .it small{display:block;color:var(--muted)}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mb0{margin-bottom:0}
+.spin{width:16px;height:16px;border:2px solid #c8ead1;border-top-color:var(--green);border-radius:50%;animation:sp 0.8s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+.ann{outline:2px dashed #f0b400;outline-offset:3px;border-radius:12px}
+
+:root{--blue:#0c75ed;--ab:#eef5f7}
+body{background:var(--ab)}
+.ash{display:grid;grid-template-columns:232px 1fr;min-height:calc(100vh - 44px)}
+.aside{background:#fff;padding:22px 16px}
+.aside .logo{font-size:27px;margin:0 0 28px 12px}
+.anav{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;font-weight:500;color:#1b1c1f;cursor:default;margin-bottom:4px}
+.anav svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6}
+.anav.on{background:var(--blue);color:#fff}
+.anav .ch{margin-left:auto;font-size:11px;opacity:.6}
+.asub{padding:8px 14px 8px 48px;border-radius:8px;color:#4b5563;font-size:14px;margin-bottom:2px;cursor:pointer}
+.asub.on{background:#e8f1fd;color:var(--blue);font-weight:500}
+.atop{display:flex;justify-content:flex-end;gap:12px;align-items:center;padding:16px 28px;background:#fff}
+.abox{border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:flex;gap:8px;align-items:center;background:#fff}
+.abox select{border:none;font:inherit;background:transparent;font-weight:500;outline:none}
+.apanel{background:#fff;border-radius:14px;margin:24px 28px;padding:24px 26px}
+.apanel h1{font-size:24px;margin:0 0 18px;font-weight:600;display:flex;align-items:center;gap:12px}
+.apanel h1 .btn{font-size:14px}
+.back{width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#555;cursor:pointer}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.tab{padding:10px 14px;cursor:pointer;color:var(--muted);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.on{color:var(--ink);border-bottom-color:var(--green)}
+.tab .cnt{background:#fde8e7;color:var(--red);border-radius:10px;padding:1px 7px;font-size:12px;margin-left:6px}
+.flt{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.flt .s{display:flex;flex:1;min-width:260px;border:1px solid var(--green);border-radius:10px;overflow:hidden}
+.flt .s input{flex:1;border:none;padding:9px 12px;outline:none;font:inherit}
+.flt .s button{background:var(--green);color:#fff;border:none;padding:0 18px;font-weight:600;font:inherit}
+.gsel{background:#f2f3f5;border:none;border-radius:10px;padding:9px 12px;font:inherit;min-width:190px}
+.chip{display:inline-block;border-radius:5px;padding:2px 8px;font-size:12px;color:#fff;font-weight:500;white-space:nowrap}
+.c-blue{background:#1d5fd1}.c-or{background:#f0a020}.c-pur{background:#7a29e0}.c-cy{background:#16a3d9}.c-gr{background:#1fa83c}.c-red{background:#d92d20}.c-gray{background:#5f6368}
+.go{width:30px;height:30px;border-radius:50%;background:#e6f6ea;color:var(--green);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700}
+.gin{background:#f2f3f5;border-radius:10px;padding:10px 12px;color:#4b5563;min-height:40px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.att{border:1px solid var(--line);border-radius:12px;margin-top:12px;overflow:hidden}
+.att .hd{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#fafbfc;border-bottom:1px solid var(--line)}
+.att .bd{padding:14px 16px}
+.prices{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.pr{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.pr small{display:block;color:var(--muted);font-size:12px}
+.pr b{font-size:17px;font-weight:600}
+.pr.hl{border-color:#f5c26b;background:#fffaf0}
+.dl{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 18px;font-size:13.5px}
+.dl div span{color:var(--muted)}
+.log{background:#0f1720;color:#d6e2ee;border-radius:10px;padding:12px;font:12px/1.5 ui-monospace,Menlo,monospace;max-height:340px;overflow:auto;white-space:pre-wrap}
+.log .m{color:#7dd3fc}.log .ok{color:#86efac}.log .bad{color:#fca5a5}
+.swrow{display:flex;align-items:flex-start;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
+.swrow .tx{flex:1}
+.mono{font-family:ui-monospace,Menlo,monospace;font-size:12.5px}
+.ro-note{font-size:12.5px;color:var(--muted);background:#f6f7f9;border-radius:8px;padding:6px 10px;display:inline-block}
+.radio-l{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px;cursor:pointer}
+.radio-l.on{border-color:var(--green);background:var(--green-50)}
+textarea.inp{min-height:76px;resize:vertical}
+
+.og{display:grid;grid-template-columns:1fr 330px;gap:12px;align-items:start}
+.prod{display:flex;align-items:center;gap:12px}
+.thumb{width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,#e8d8d8,#c9b3b3)}
+.price-line{background:#f6f7f9;border-radius:10px;padding:10px 12px;margin-top:12px;font-size:13.5px}
+.price-line b{font-weight:600}
+.preset{border:1.5px solid var(--line-2);border-radius:10px;padding:10px 12px;cursor:pointer;display:flex;gap:10px;align-items:center}
+.preset.on{border-color:var(--green);background:var(--green-50)}
+.preset .r{width:16px;height:16px;border-radius:50%;border:2px solid var(--line-2);flex:none}
+.preset.on .r{border:5px solid var(--green)}
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.courier{display:flex;gap:14px;align-items:center;background:#f6f7f9;border-radius:12px;padding:12px 14px}
+.cnt{font-variant-numeric:tabular-nums;font-weight:600}
+
+.buyer{background:#fff;min-height:100vh}
+.strip{background:#1b1c1f;color:#e9ecef;font-size:13px;display:flex;justify-content:space-between;padding:10px 7%}
+.strip span+span{margin-left:28px}
+.bh{display:flex;align-items:center;gap:18px;padding:14px 7%;border-bottom:1px solid var(--line)}
+.bh .logo{margin:0;font-size:30px}
+.srch{flex:1;display:flex;border:2px solid var(--green);border-radius:10px;overflow:hidden}
+.srch input{flex:1;border:none;padding:9px 12px;outline:none}
+.srch button{background:var(--green);color:#fff;border:none;padding:0 20px;font-weight:600}
+.wrapb{padding:24px 7% 60px}
+.cg{display:grid;grid-template-columns:1fr 330px;gap:40px;align-items:start}
+.blk{margin-bottom:26px}
+.blk h2{font-size:19px;margin:0 0 4px;font-weight:600}
+.box{border:1px solid var(--line);border-radius:14px;padding:4px 16px}
+.opt{display:flex;gap:12px;align-items:center;padding:14px 0}
+.opt+.opt{border-top:1px solid var(--line)}
+.radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--line-2);flex:none}
+.radio.on{border:5px solid var(--green)}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.tile{border:1px solid var(--line-2);border-radius:12px;padding:14px;height:84px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;background:#fff}
+.tile.on{border-color:var(--green);background:var(--green-50)}
+.tile .lg{font-size:17px}
+.sumc{border-radius:16px;box-shadow:0 2px 12px rgba(16,24,40,.08);padding:20px 22px}
+.sumc .ln{display:flex;justify-content:space-between;margin:7px 0;color:var(--muted)}
+.sumc .ln b{color:var(--ink);font-weight:600}
+.sumc .tot{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:14px;margin-top:12px;font-size:18px;font-weight:600}
+.big{width:100%;justify-content:center;padding:15px;font-size:16px;border-radius:12px;margin-top:16px}
+.ygopts{display:grid;gap:8px;margin-top:12px}
+.valid{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);margin-top:10px}
+.demo{background:#fff3c4;border:1px dashed #d9b400;color:#6b5600;border-radius:6px;padding:2px 8px;font-size:11.5px;cursor:pointer}
+.adr{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.oc{display:grid;grid-template-columns:1fr 330px;gap:40px;align-items:start}
+.track{border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-top:14px}
+/* ---- seller-delivery additions ---- */
+.phonewrap{display:flex;justify-content:center;padding:24px 0 40px}
+.phone{width:390px;min-height:780px;border:11px solid #15171a;border-radius:44px;background:#f3f4f6;overflow:hidden;position:relative;box-shadow:0 20px 50px rgba(0,0,0,.18)}
+.phone .sb{height:34px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:13px;font-weight:600;background:#fff}
+.phone .ah{background:#fff;padding:10px 16px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+.phone .ah b{font-size:17px}
+.phone .pc{padding:12px}
+.phone .card{padding:14px 14px;border-radius:14px}
+.phone .btn{padding:11px 14px}
+.phone .tabbar{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 0 14px;font-size:11px;color:var(--muted)}
+.phone .tabbar .on{color:var(--green);font-weight:600}
+.phone .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:20px 20px 0 0;padding:18px 16px 26px;box-shadow:0 -10px 30px rgba(0,0,0,.15);z-index:5}
+.cityrow{display:grid;grid-template-columns:1fr 200px 34px;gap:8px;align-items:center;margin-top:8px}
+.brblock{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:10px}
+.brblock.on{border-color:var(--green-100);background:#fbfefb}
+.x{width:34px;height:38px;border-radius:9px;border:1px solid var(--line-2);background:#fff;cursor:pointer;color:var(--muted)}
+.counter{float:right;color:var(--muted);font-size:12px}
+.sdcard{border:1.5px solid var(--line-2);border-radius:12px;padding:14px;display:flex;gap:12px;align-items:flex-start;cursor:pointer;background:#fff;margin-top:12px}
+.sdcard.on{border-color:var(--green);background:var(--green-50)}
+.sdcard.off{background:#f6f7f9;cursor:not-allowed;color:var(--muted)}
+.sdcard .r{width:18px;height:18px;border-radius:50%;border:2px solid var(--line-2);flex:none;margin-top:2px}
+.sdcard.on .r{border:5px solid var(--green)}
+.sdcard .why{color:var(--red);font-size:13px;margin-top:4px}
+.info{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#eceef1;color:var(--ink-2);font-size:11px;font-weight:700;cursor:pointer;margin-left:6px;vertical-align:middle}
+.tip{background:#1b1c1f;color:#fff;border-radius:10px;padding:10px 12px;font-size:12.5px;margin-top:8px;max-width:420px}
+.codebox{display:flex;gap:8px;justify-content:center;margin:14px 0}
+.codebox input{width:52px;height:60px;text-align:center;font-size:26px;font-weight:600;border:1.5px solid var(--line-2);border-radius:12px;outline:none}
+.codebox input:focus{border-color:var(--green)}
+.overdue{color:var(--red);font-weight:600}
+.dflt{border:1px solid var(--line);border-radius:14px;padding:16px;background:#fff}
+.dflt h4{margin:14px 0 8px;font-size:15px}
+.dflt h4:first-child{margin-top:0}
+.fopt{display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer}
+.fopt .radio{width:18px;height:18px}
+.chipf{display:inline-block;border:1px solid var(--line);border-radius:18px;padding:5px 12px;margin:0 6px 6px 0;font-size:13px;background:#f6f7f9}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.pcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px}
+.pcard .img{height:120px;border-radius:10px;background:linear-gradient(135deg,#eef0ec,#d9dfd6);margin-bottom:8px}
+.pcard .pr{font-weight:700;font-size:16px}
+.ptag{display:inline-block;font-size:11.5px;border-radius:6px;padding:2px 7px;background:#f1f2f4;color:var(--ink-2);margin-top:6px}
+.empty{text-align:center;color:var(--muted);padding:50px 0}
+.addrpick{position:fixed;inset:0;background:rgba(16,18,22,.45);display:grid;place-items:center;z-index:45}
+.reasons label{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px;cursor:pointer}
+.reasons label.on{border-color:var(--green);background:var(--green-50)}
+.notif{background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:12px 14px;display:flex;gap:10px;max-width:360px}
+.notif .ic2{width:36px;height:36px;border-radius:10px;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:700;flex:none}
+/* ---- pickup additions ---- */
+.qr{display:block;background:#fff;padding:10px;border-radius:12px;border:1px solid var(--line)}
+.qrwrap{display:flex;gap:22px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.hcode{font-size:34px;font-weight:700;letter-spacing:6px;font-variant-numeric:tabular-nums}
+.brcard{border:1.5px solid var(--green);background:var(--green-50);border-radius:14px;padding:14px 16px;margin-top:12px}
+.brcard .nm{font-weight:600;font-size:16px}
+.badge{display:inline-block;font-size:12px;border-radius:12px;padding:2px 9px;margin-left:8px;vertical-align:middle;background:#e7f6ea;color:#0c7a2a;font-weight:600}
+.badge.n{background:#eef1f6;color:#3b4a63}
+.hrs{display:grid;grid-template-columns:110px 120px 1fr;gap:6px 12px;align-items:center;margin-top:8px}
+.hrs .d{font-weight:500}
+.hrs select{max-width:110px}
+.hrow-err{grid-column:1/-1;color:var(--red);font-size:12.5px;margin:-2px 0 4px}
+.blist .bl{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:12px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.blist .bl:hover{background:#fafbfa}
+.blist .bl.dis{cursor:not-allowed;color:var(--muted)}
+.blist .bl .why{color:var(--red);font-size:12.5px}
+.blist .bl.sel{background:var(--green-50)}
+.ptabs{display:flex;background:#f1f2f4;border-radius:10px;padding:3px;gap:3px;margin:10px 0}
+.ptabs span{flex:1;text-align:center;padding:7px;border-radius:8px;cursor:pointer;font-weight:500}
+.ptabs span.on{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.map{position:relative;height:360px;border-radius:12px;overflow:hidden;background:#eef2e8;background-image:linear-gradient(90deg,rgba(255,255,255,.9) 6px,transparent 6px),linear-gradient(rgba(255,255,255,.9) 6px,transparent 6px),linear-gradient(35deg,transparent 48%,rgba(255,255,255,.95) 48%,rgba(255,255,255,.95) 52%,transparent 52%);background-size:90px 90px,90px 90px,100% 100%}
+.map .river{position:absolute;left:-10%;top:58%;width:120%;height:22px;background:#cfe3f5;transform:rotate(-8deg)}
+.map .pinm{position:absolute;transform:translate(-50%,-100%);cursor:pointer;text-align:center}
+.map .pinm svg{width:34px;height:34px;fill:var(--green);stroke:#fff;stroke-width:1.5}
+.map .pinm.dis svg{fill:#a9adb3}
+.map .pinm.sel svg{fill:#0a6b22}
+.map .pinm small{display:block;background:#fff;border-radius:6px;padding:1px 6px;font-size:11px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.map .me{position:absolute;width:16px;height:16px;border-radius:50%;background:#2f6fde;border:3px solid #fff;box-shadow:0 0 0 6px rgba(47,111,222,.2);transform:translate(-50%,-50%)}
+.map .mcard{position:absolute;left:12px;right:12px;bottom:12px;background:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.scan{background:#111;border-radius:16px;height:420px;position:relative;display:grid;place-items:center;overflow:hidden}
+.scan .vf{width:220px;height:220px;border:3px solid rgba(255,255,255,.85);border-radius:18px;box-shadow:0 0 0 2000px rgba(0,0,0,.45)}
+.scan .lbl{position:absolute;top:18px;color:#fff;font-size:13px}
+.demo-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.demo-acts button{font-size:12px;border:1px dashed #b8bdc4;background:#fbfbfc;border-radius:8px;padding:6px 9px;cursor:pointer;color:#555b63}
+.sumbox{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:10px;background:#fafbfc}
+.lock{filter:grayscale(1);opacity:.6;pointer-events:none}
+.lockscreen{background:linear-gradient(160deg,#2b3a55,#5d4b6e);min-height:700px;padding:30px 14px 20px;color:#fff}
+.lockscreen .clock{text-align:center;font-size:62px;font-weight:300;margin:10px 0 2px}
+.lockscreen .date{text-align:center;font-size:15px;opacity:.9;margin-bottom:22px}
+.push{background:rgba(255,255,255,.92);color:#1b1c1f;border-radius:16px;padding:10px 12px;margin-bottom:8px;display:flex;gap:10px}
+.push .ap{width:30px;height:30px;border-radius:8px;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px;flex:none}
+.push .tt{font-weight:600;font-size:13.5px}
+.push .tx{font-size:13px;line-height:1.35}
+.push .meta{font-size:11px;color:#6b7178;display:flex;justify-content:space-between}
+.push .acts2{display:flex;gap:6px;margin-top:6px}
+.push .acts2 span{background:#eef0f2;border-radius:8px;padding:4px 8px;font-size:12px;font-weight:500}
+.nlist{position:absolute;right:16px;top:58px;width:400px;background:#fff;border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.18);z-index:20;overflow:hidden}
+.nlist .hd{display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);font-weight:600}
+.nlist .it{display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.nlist .it.unread{background:#f3fbf5}
+.nlist .it .dt{width:8px;height:8px;border-radius:50%;background:var(--green);margin-top:6px;flex:none}
+.nlist .it.read .dt{background:transparent}
+.bellc{position:relative}
+.bellc .cnt2{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border-radius:9px;font-size:10.5px;padding:0 5px;font-weight:700}
+.sms{background:#fff;min-height:700px}
+.sms .hd{padding:10px 14px;border-bottom:1px solid var(--line);text-align:center;font-weight:600}
+.sms .bub{background:#e9e9eb;border-radius:18px;padding:9px 13px;margin:10px 60px 4px 12px;font-size:14.5px;line-height:1.35}
+.sms .tm{font-size:11px;color:#8b9189;margin:0 12px}
+.lenok{color:#0c7a2a;font-weight:600}.lenbad{color:var(--red);font-weight:700}
+.langsw span{display:inline-block;border:1px solid var(--line-2);border-radius:8px;padding:4px 10px;margin-right:6px;cursor:pointer}
+.langsw span.on{background:var(--green);border-color:var(--green);color:#fff}
+.alog td{font-size:13px}
+/* ---- P-OL1 cart and checkout ---- */
+.cartg{border:1px solid var(--line);border-radius:14px;padding:0 16px 4px;margin-bottom:16px;background:#fff}
+.cartg .sh{display:flex;align-items:center;gap:10px;padding:14px 0 10px;font-weight:600;font-size:16px}
+.cartg .sh svg{width:20px;height:20px;stroke:var(--muted);fill:none;stroke-width:1.6}
+.cartg .bh2{display:flex;align-items:center;gap:8px;padding:8px 12px;margin:2px 0 4px;background:#f6f7f9;border-radius:10px;font-size:13px;color:var(--ink-2)}
+.cartg .bh2 svg{width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:1.6}
+.cline{display:grid;grid-template-columns:22px 64px 1fr 120px 140px;gap:14px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+.cartg .bh2+.cline{border-top:none}
+.cline input[type=checkbox]{width:18px;height:18px;accent-color:var(--green);cursor:pointer}
+.cline .pimg{width:64px;height:64px;border-radius:10px;background:linear-gradient(135deg,#eef0ec,#d9dfd6)}
+.cline .pn{font-weight:500}
+.ship{font-size:13px;color:var(--ink-2);display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap}
+.ship svg{width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:1.6}
+.ship .chg{color:var(--green);cursor:pointer;font-weight:500;margin-left:4px}
+.near{display:inline-block;font-size:11.5px;border-radius:10px;padding:1px 8px;background:#eef1f6;color:#3b4a63;font-weight:600}
+.qty{display:inline-flex;align-items:center;border:1px solid var(--line-2);border-radius:9px;overflow:hidden}
+.qty span{padding:5px 10px;color:var(--muted)}
+.qty b{white-space:nowrap;padding:5px 10px;font-weight:600;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.ltot{text-align:right;font-weight:600;font-size:15px}
+.mtile{border:1.5px solid var(--line-2);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:center;cursor:pointer;background:#fff;margin-top:10px}
+.mtile.on{border-color:var(--green);background:var(--green-50)}
+.mtile .r{width:18px;height:18px;border-radius:50%;border:2px solid var(--line-2);flex:none}
+.mtile.on .r{border:5px solid var(--green)}
+.mtile.off{background:#f6f7f9;cursor:not-allowed;color:var(--muted)}
+.mtile.off .r{background:#eceef1}
+.mtile .mic{width:22px;height:22px;stroke:var(--ink-2);fill:none;stroke-width:1.6;flex:none}
+.mtile.off .mic{stroke:var(--muted)}
+.mtile .why{color:var(--red);font-size:13px;margin-top:2px}
+.mtile .mp{font-weight:600;white-space:nowrap;text-align:right}
+.mtile .mp s{display:block;color:var(--muted);font-weight:400;font-size:12px}
+.mtile.off .yglogo,.mtile.off span[style]{opacity:.55}
+.demo-line{border:1px dashed #b8bdc4;background:#fbfbfc;border-radius:10px;padding:8px 12px;font-size:12.5px;color:#555b63;margin-top:12px}
+.demo-sw{display:flex;align-items:center;gap:10px;font-size:12.5px;color:#555b63;border:1px dashed #b8bdc4;background:#fbfbfc;border-radius:10px;padding:8px 12px;margin-top:12px;cursor:pointer}
+.backl{color:var(--green);cursor:pointer;font-weight:500;font-size:13px}
+.pay-pg{min-height:100vh;background:#eef1f5;display:flex;align-items:flex-start;justify-content:center;padding:50px 20px}
+.pay-card{width:460px;background:#fff;border-radius:18px;box-shadow:0 10px 30px rgba(16,24,40,.08);padding:26px 28px}
+.pay-logo{font-weight:800;font-size:24px;letter-spacing:-.5px;color:#1f3d8a}
+.pay-logo i{color:#24b47e;font-style:normal}
+.cd{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)}
+.cd.low{color:var(--red)}
+.phones{display:flex;gap:18px;justify-content:center;padding:18px 0 30px}
+.phones .pcol{display:flex;flex-direction:column;align-items:center;gap:8px}
+.phones .cap{font-size:12.5px;color:#555b63;font-weight:500}
+.phones .phonewrap{padding:0}
+.phones .phone{width:372px;min-height:760px}
+.phone .mline{display:grid;grid-template-columns:20px 48px 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.phone .mline .pimg{width:48px;height:48px;border-radius:9px;background:linear-gradient(135deg,#eef0ec,#d9dfd6)}
+.phone .mline input{width:18px;height:18px;accent-color:var(--green);margin-top:14px}
+.phone .ship{font-size:12.5px}
+.phone .dim{position:absolute;inset:0;background:rgba(16,18,22,.45);z-index:4}
+.phone .sheet .bl{padding:11px 2px}
+.phone .botbar{position:absolute;left:0;right:0;bottom:54px;background:#fff;border-top:1px solid var(--line);padding:10px 14px}
+.phone .mtile{padding:10px 12px;margin-top:8px}
+.phone .alert{padding:10px 12px;font-size:12.5px}
+/* ---- P-OL2 order pages (buyer and seller); every class starts with o2 ---- */
+.o2state{display:flex;gap:14px;align-items:flex-start;border-radius:14px;padding:14px 16px;margin:6px 0 4px;background:var(--red-50);border:1px solid #f9c9c4}
+.o2state .ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:700;color:#fff;flex:none;background:var(--red)}
+.o2state .lbl{font-weight:600;font-size:17px;color:var(--red)}
+.o2state .tx{margin-top:4px}
+.o2state .tx div{margin-top:2px}
+.o2date{display:inline-flex;gap:6px;align-items:center;font-size:13px;color:var(--ink-2)}
+.o2date svg{width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:1.6}
+.o2line{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.o2line:first-of-type{border-top:none}
+.o2tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:4px 0 14px;flex-wrap:wrap}
+.o2tab{padding:10px 12px;cursor:pointer;color:var(--muted);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.o2tab.on{color:var(--ink);border-bottom-color:var(--green)}
+.o2tab .c{background:#eef0f2;color:var(--ink-2);border-radius:10px;padding:1px 7px;font-size:12px;margin-left:6px}
+.o2tab.on .c{background:var(--green-50);color:var(--green)}
+.o2tab .c.r{background:#fde8e7;color:var(--red)}
+tr.o2go{cursor:pointer}
+tr.o2go:hover td{background:#fafbfa}
+.o2left{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.o2left.red{color:var(--red)}
+.o2mw{position:relative;display:inline-block}
+.o2menu{position:absolute;top:calc(100% + 6px);left:0;width:360px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.14);padding:6px;z-index:10}
+.o2menu .mi{padding:9px 12px;border-radius:8px;cursor:pointer;font-weight:500}
+.o2menu .mi:hover{background:var(--green-50)}
+.o2menu .mh{padding:8px 12px;color:var(--muted);font-size:12.5px;white-space:normal}
+.o2hist .it{display:grid;grid-template-columns:128px 1fr;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.o2hist .it:first-child{border-top:none}
+.o2hist .tm{color:var(--muted);font-size:12.5px;font-variant-numeric:tabular-nums}
+.o2hist .meta{color:var(--muted);font-size:12.5px;margin-top:3px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.o2hist .cm{font-size:13px;margin-top:3px}
+.o2src{display:inline-block;font-size:11.5px;border-radius:6px;padding:1px 7px;background:#f1f2f4;color:var(--ink-2)}
+.o2src.ev{background:#eef5fe;color:#1d5fd1}
+.o2src.job{background:var(--violet-50);color:var(--violet)}
+.o2src.cor{background:#fff6e0;color:#b54708}
+.o2demo{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.o2demo button,.o2demo label{font-size:12px;border:1px dashed #b8bdc4;background:#fbfbfc;border-radius:8px;padding:6px 9px;cursor:pointer;color:#555b63;display:inline-flex;gap:6px;align-items:center}
+.o2demo button.on,.o2demo label.on{border-color:#d9b400;background:#fff3c4;color:#6b5600}
+.o2demo input{accent-color:#b58a00;margin:0}
+.o2chat{background:#f1f2f4;border-radius:12px;padding:9px 12px;margin-top:10px;font-size:13.5px}
+.o2chat small{display:block;color:var(--muted);margin-top:3px}
+.o2acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.phone .o2dim{position:absolute;inset:0;background:rgba(16,18,22,.45);z-index:4}
+.phone .steps .step{font-size:11px}
+.phone .steps .step .dot{width:30px;height:30px}
+.phone .steps::before{top:15px}
+.phone .o2full{width:100%;justify-content:center}
+.phone .o2state{padding:12px}
+/* Price types prototypes P-PT3, P-PT4 */
+.ptwrap{padding:22px 7% 60px}
+.bc{font-size:12.5px;color:var(--muted);margin-bottom:10px}
+.pp{display:grid;grid-template-columns:420px 1fr;gap:28px;background:#fff;border-radius:16px;padding:22px}
+.pimg{aspect-ratio:1/1;border-radius:14px;background:linear-gradient(135deg,#eef2f7,#cfd8e3);display:flex;align-items:center;justify-content:center;color:#8a96a6;font-size:13px}
+.pp h1{font-size:22px;margin:0 0 6px;font-weight:600}
+.pp .bigp{font-size:26px;font-weight:700;margin:10px 0 2px}
+.pp .old{color:var(--muted);text-decoration:line-through;font-size:15px;margin-left:8px;font-weight:500}
+.vpick{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.vpick span{border:1.5px solid var(--line-2);border-radius:9px;padding:6px 12px;cursor:pointer;background:#fff}
+.vpick span.on{border-color:var(--green);background:var(--green-50)}
+.tiers{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:12px 0}
+.tiers .tr{display:flex;justify-content:space-between;padding:9px 14px;border-top:1px solid var(--line)}
+.tiers .tr:first-child{border-top:none}
+.tiers .tr.hl{background:var(--green-50);font-weight:600}
+.tiers .tr s{color:var(--muted);margin-right:8px;font-weight:400}
+.step{display:inline-flex;align-items:center;border:1.5px solid var(--line-2);border-radius:10px;overflow:hidden;background:#fff}
+.stp{display:inline-flex;align-items:center;border:1.5px solid var(--line-2);border-radius:10px;overflow:hidden;background:#fff}
+.stp button{border:none;background:#fff;width:34px;height:34px;font-size:18px;cursor:pointer}
+.stp input{width:70px;border:none;text-align:center;height:34px;outline:none;font-weight:600}
+.stp.lock{background:#f4f5f7}.stp.lock input{background:#f4f5f7;color:var(--muted)}
+.hintg{background:var(--green-50);color:#0b5f22;border-radius:9px;padding:8px 12px;font-size:13px;margin:8px 0}
+.warnb{background:var(--amber-50);color:#7a5200;border-radius:9px;padding:8px 12px;font-size:13px;margin:8px 0}
+.errb{background:var(--red-50);color:#9b1c13;border-radius:9px;padding:8px 12px;font-size:13px;margin:8px 0}
+.infob{background:var(--blue-50);color:#0a4c9c;border-radius:9px;padding:8px 12px;font-size:13px;margin:8px 0}
+.lock-ic{display:inline-block;margin-right:4px}
+.grid-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.pcard{background:#fff;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.pcard .pimg{aspect-ratio:4/3}
+.pcard .pr1{font-size:18px;font-weight:700}
+.pcard .moq{font-size:12.5px;color:var(--muted)}
+.pcard .tl{font-size:13px;min-height:36px}
+.tagt{display:inline-block;font-size:11px;background:#eef0f3;color:#555;border-radius:6px;padding:2px 7px}
+/* chat */
+.chatw{display:grid;grid-template-columns:300px 1fr;background:#fff;border-radius:16px;overflow:hidden;min-height:640px;border:1px solid var(--line)}
+.clist{border-right:1px solid var(--line);background:#fafbfc}
+.clist .ci{display:grid;grid-template-columns:42px 1fr;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+.clist .ci.on{background:var(--green-50)}
+.clist .ci .th{width:42px;height:42px;border-radius:9px;background:linear-gradient(135deg,#eef2f7,#cfd8e3)}
+.clist .ci small{display:block;color:var(--muted);font-size:12px}
+.cmain{display:flex;flex-direction:column;min-height:640px}
+.chead{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.chead .th{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#eef2f7,#cfd8e3)}
+.chead .sp{flex:1}
+.cbody{flex:1;padding:16px;display:flex;flex-direction:column;gap:10px;background:#f6f7f9;overflow:auto;max-height:620px}
+.msg{max-width:62%;padding:9px 12px;border-radius:12px;background:#fff;border:1px solid var(--line);font-size:13.5px}
+.msg.me{align-self:flex-end;background:var(--green-50);border-color:var(--green-100)}
+.msg small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.sysm{align-self:center;font-size:12px;color:var(--muted);background:#eceef1;border-radius:10px;padding:4px 10px}
+.pcm{align-self:flex-start;display:grid;grid-template-columns:56px 1fr;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;width:340px}
+.pcm .th{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#eef2f7,#cfd8e3)}
+.cinput{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+.cinput input{flex:1;border:1px solid var(--line-2);border-radius:10px;padding:9px 12px;outline:none}
+.ofr{width:440px;background:#fff;border:1.5px solid var(--green-100);border-radius:14px;padding:12px 14px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.ofr.me{align-self:flex-end}.ofr.them{align-self:flex-start}
+.ofr.dead{opacity:.6;border-color:var(--line)}
+.ofr h4{margin:0 0 4px;font-size:14.5px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ofr .ln{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-top:1px dashed var(--line)}
+.ofr .tot{display:flex;justify-content:space-between;font-weight:700;margin-top:6px;padding-top:6px;border-top:1px solid var(--line)}
+.ofr .meta{font-size:12px;color:var(--muted);margin-top:6px}
+.ofr .acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.ofr .cmt{font-size:12.5px;background:#f6f7f9;border-radius:8px;padding:6px 9px;margin-top:6px}
+.ofr .cd{font-size:12px;color:#b54708;font-weight:600}
+/* offer form panel */
+.ofp{position:fixed;top:0;right:0;bottom:0;width:560px;background:#fff;box-shadow:-8px 0 30px rgba(0,0,0,.15);z-index:55;display:flex;flex-direction:column}
+.ofp .hd{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.ofp .bd{padding:16px 20px;overflow:auto;flex:1}
+.ofp .ft{padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+.oline{display:grid;grid-template-columns:1.6fr .75fr .95fr .9fr 24px;gap:8px;align-items:start;margin:8px 0}
+.oline select,.oline input,.ofp select,.ofp textarea,.ofp input{border:1px solid var(--line-2);border-radius:9px;padding:8px 10px;width:100%;outline:none;background:#fff}
+.oline .e,.ofp .e{border-color:var(--red)!important}
+.oline .et{grid-column:1/-1;color:var(--red);font-size:12px;margin-top:-4px}
+.oline .lt{padding-top:9px;font-weight:600;text-align:right}
+.oline .x{border:none;background:none;cursor:pointer;color:var(--muted);font-size:18px;padding-top:6px}
+.segm{display:inline-flex;border:1px solid var(--line-2);border-radius:9px;overflow:hidden}
+.segm span{padding:7px 14px;cursor:pointer;border-left:1px solid var(--line-2)}
+.segm span:first-child{border-left:none}
+.segm span.on{background:var(--green);color:#fff}
+/* cart */
+.cart{display:grid;grid-template-columns:1fr 340px;gap:20px}
+.cgrp{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:14px}
+.cgrp .gh{display:flex;justify-content:space-between;align-items:center;font-weight:600;margin-bottom:6px}
+.cl{display:grid;grid-template-columns:24px 52px 1fr 150px 130px;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.cl .th{width:52px;height:52px;border-radius:9px;background:linear-gradient(135deg,#eef2f7,#cfd8e3)}
+.cl input[type=checkbox]{width:18px;height:18px;accent-color:var(--green)}
+.cl .pr{text-align:right;font-weight:600}
+.cl .pr small{display:block;color:var(--muted);font-weight:400}
+.offg{border:1.5px solid var(--green-100);border-radius:12px;padding:8px 12px;margin:8px 0;background:#fbfefc}
+.offg .oh{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;color:#0b5f22}
+.aside-sum{background:#fff;border-radius:14px;padding:16px;height:max-content;position:sticky;top:60px}
+.aside-sum .r{display:flex;justify-content:space-between;margin:6px 0}
+.setaside{background:#fff;border-radius:14px;padding:14px 16px;border:1px dashed var(--line-2)}
+/* lists */
+.tbl{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden}
+.tbl th,.tbl td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px}
+.tbl th{background:#f6f7f9;color:var(--muted);font-weight:600;font-size:12px}
+.fchips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.fchips span{border:1px solid var(--line-2);border-radius:20px;padding:5px 12px;cursor:pointer;background:#fff;font-size:13px}
+.fchips span.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.histp{background:#fff;border-radius:12px;padding:12px 14px;border:1px solid var(--line);margin-top:8px;font-size:12.5px}
+.histp .it{display:grid;grid-template-columns:130px 1fr 160px;gap:8px;padding:5px 0;border-top:1px solid var(--line)}
+/* notifications */
+.nlist{background:#fff;border-radius:14px;width:420px;box-shadow:0 10px 30px rgba(0,0,0,.12);overflow:hidden}
+.nlist .ni{padding:12px 14px;border-top:1px solid var(--line)}
+.nlist .ni b{display:block}
+.push{background:rgba(250,250,252,.96);border-radius:16px;padding:10px 12px;margin:8px;box-shadow:0 6px 18px rgba(0,0,0,.15);font-size:12.5px}
+.push b{display:block;font-size:13px}
+/* filters */
+.srchp{display:grid;grid-template-columns:260px 1fr;gap:20px}
+.fpanel{background:#fff;border-radius:14px;padding:14px 16px;height:max-content}
+.fpanel h5{margin:12px 0 6px;font-size:13px}
+.fpanel input[type=number]{width:100%;border:1px solid var(--line-2);border-radius:8px;padding:7px 9px}
+.fpanel input:disabled{background:#f2f3f5}
+.sortb{display:flex;gap:8px;margin-bottom:12px;align-items:center;font-size:13px}
+.ofr h4 .pill{white-space:nowrap;flex:none}
+</style></head><body>
+<div id="app"></div><p style="text-align:center;color:#8b9189;font-size:11.5px;margin:18px 0 28px">Optom.uz · clickable prototype for the price types user stories (epic US-SF-2.2) · requirements: Price types and negotiable price PRD · example data only. Where a prototype differs from the acceptance criteria in Confluence, the acceptance criteria win.</p>
+<script>// Prototype harness: scenario picker, notes panel, toasts, icons, seller shell
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const som = n => Math.round(n).toLocaleString("ru-RU").replace(/,/g, " ") + " сум";
+const ICON = {
+  chart: '<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  box: '<svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg>',
+  list: '<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+  chat: '<svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z"/></svg>',
+  users: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M16 11a3 3 0 1 0 0-6M21 20c0-2-1.5-4-4-4.6"/></svg>',
+  store: '<svg viewBox="0 0 24 24"><path d="M3 9l2-5h14l2 5M4 9v11h16V9M3 9h18M9 20v-6h6v6"/></svg>',
+  gear: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>',
+  spark: '<svg viewBox="0 0 24 24"><path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/></svg>',
+  truck: '<svg viewBox="0 0 24 24"><path d="M2 6h12v10H2zM14 10h4l3 3v3h-7"/><circle cx="6" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>',
+  pin: '<svg viewBox="0 0 24 24"><path d="M12 22s7-7 7-12a7 7 0 1 0-14 0c0 5 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+  phone: '<svg viewBox="0 0 24 24"><path d="M5 3h4l2 5-3 2a12 12 0 0 0 6 6l2-3 5 2v4a2 2 0 0 1-2 2A18 18 0 0 1 3 5a2 2 0 0 1 2-2z"/></svg>',
+  cal: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  card: '<svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>',
+  msg: '<svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z"/></svg>',
+  user: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>',
+  bell: '<svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></svg>',
+  globe: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>',
+  side: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>',
+};
+const LOGO = '<span class="logo"><svg width="34" height="34" viewBox="0 0 34 34"><rect x="12" y="2" width="10" height="30" rx="3" fill="#00a028"/><rect x="2" y="8" width="30" height="5" rx="2.5" fill="#00a028"/><rect x="2" y="15" width="30" height="5" rx="2.5" fill="#00a028"/><rect x="2" y="22" width="30" height="5" rx="2.5" fill="#00a028"/><rect x="15" y="9" width="4" height="17" rx="1" fill="#fff"/></svg>optom</span>';
+const YG = '<span class="yglogo">Yandex <i>Go</i></span>';
+const FARGO = '<span style="font-weight:800;font-style:italic;letter-spacing:-.5px"><span style="color:#e3262e">◤</span> FARGO</span>';
+
+function sellerShell(active, crumbs, content) {
+  const nav = (k, ic, t) => `<div class="nav ${active === k ? "on" : ""}">${ICON[ic]}${t}</div>`;
+  return `<div class="shell"><aside class="side">${LOGO}
+    <div class="grp">Основное</div>${nav("an", "chart", "Аналитика")}${nav("pr", "box", "Товары")}${nav("or", "list", "Заказы")}${nav("ch", "chat", "Чаты")}
+    <div class="grp">Организация</div>${nav("em", "users", "Сотрудники")}${nav("br", "store", "Филиалы")}
+    <div class="grp">Система</div>${nav("se", "gear", "Настройки")}${nav("ta", "spark", "Тарифы")}
+    <div class="me"><span class="ava">НА</span><div><b style="font-weight:600">Николаев А. Д.</b><small>● Подтвержден</small></div></div></aside>
+    <main class="main"><div class="top"><span class="iconbtn">${ICON.side.replace("<svg", '<svg width="18" height="18" fill="none" stroke="#38383b"')}</span><div class="crumbs">${crumbs}</div><span class="sp"></span><span class="iconbtn">${ICON.bell.replace("<svg", '<svg width="18" height="18" fill="none" stroke="#38383b"')}</span><span class="lang">Русский ▾</span></div>${content}</main></div>`;
+}
+
+// ---- harness ----
+const H = { scen: [], cur: null, notesOn: false };
+function harness(meta, scenarios) {
+  H.scen = scenarios;
+  const bar = document.createElement("div"); bar.className = "pbar";
+  bar.innerHTML = `<b>${esc(meta.title)}</b><span class="tag">${esc(meta.stories)}</span><span class="tag">v${meta.version}</span>
+    <span>Scenario:</span><select id="scen">${scenarios.map((s, i) => `<option value="${i}">${i + 1}. ${esc(s.label)}</option>`).join("")}</select>
+    <button id="reset" title="Reset the current scenario">↺ Reset</button><span class="sp"></span>
+    <span style="color:#9aa1ab">Prototype · RU UI · notes in English</span>
+    <button id="ntoggle">Notes for this state</button>`;
+  document.body.prepend(bar);
+  const notes = document.createElement("div"); notes.className = "notes"; notes.id = "notes"; document.body.append(notes);
+  $("#scen").onchange = e => go(+e.target.value);
+  $("#reset").onclick = () => go(+$("#scen").value);
+  $("#ntoggle").onclick = () => { H.notesOn = !H.notesOn; notes.classList.toggle("show", H.notesOn); $("#ntoggle").classList.toggle("on", H.notesOn); };
+  const q = new URLSearchParams(location.hash.slice(1)), qs = new URLSearchParams(location.search); go(+(q.get("s") || qs.get("s") || 0));
+}
+function go(i) {
+  const s = H.scen[i]; if (!s) return; H.cur = s; $("#scen").value = i; history.replaceState(null, "", "#s=" + i);
+  s.apply(); setNotes(s.notes, s.src);
+}
+function setNotes(list, src) {
+  $("#notes").innerHTML = `<h4>What this state shows</h4><ul>${(list || []).map(n => `<li>${n}</li>`).join("")}</ul>${src ? `<div class="src">${src}</div>` : ""}`;
+}
+let toastT;
+function toast(t) { let el = $(".toast"); if (!el) { el = document.createElement("div"); el.className = "toast"; document.body.append(el); } el.textContent = t; el.style.display = "block"; clearTimeout(toastT); toastT = setTimeout(() => el.style.display = "none", 3200); }
+function modal(html) { closeModal(); const bg = document.createElement("div"); bg.className = "modal-bg"; bg.id = "mbg"; bg.innerHTML = `<div class="modal">${html}</div>`; document.body.append(bg); return bg; }
+function closeModal() { const m = $("#mbg"); if (m) m.remove(); }
+
+// When embedded in a narrow frame (e.g. Confluence iFrame), scale the desktop layout down to fit
+(function fitFrame() {
+  if (window === window.top) return;
+  const apply = () => { const w = document.documentElement.clientWidth; document.documentElement.style.zoom = w < 1280 ? (w / 1280).toFixed(3) : ""; };
+  apply(); window.addEventListener("resize", apply);
+})();
+
+
+// P-PT3 Negotiation: product chat, price offer, answer, cart, order, admin, notifications. Example data only.
+const PROD = "Футболка хлопковая базовая, 180 г/м²", SELL = "Ташкент Текстиль", BUYER = "Азиз Хамидов", SUSER = "Камола Р.";
+const BRS = { ch: "Филиал Чиланзар, Ташкент", se: "Склад Сергели, Ташкент" };
+const STOCK = { ch: { w: 500, b: 300, n: 0 }, se: { w: 120, b: 80, n: 400 } };
+const VN = { w: "Белый", b: "Чёрный", n: "Синий" };
+const MOQ = 50;
+const LBL = { 1: ["Ожидает ответа", "g"], 2: ["Принято, ждёт оплаты", "b"], 3: ["Оплачено", "v"], 4: ["Отклонено", "r"], 5: ["Отозвано продавцом", "n"], 6: ["Заменено новым предложением", "n"], 7: ["Истекло", "n"], 8: ["Недоступно", "a"] };
+const pill = (l, c) => `<span class="pill ${c}">${l}</span>`;
+const fmt = n => Math.round(n).toLocaleString("ru-RU").replace(/,/g, " ").replace(/ /g, " ");
+const tot = o => o.lines.reduce((a, l) => a + l[1] * l[2], 0), qty = o => o.lines.reduce((a, l) => a + l[1], 0);
+let S = {};
+function O(no, st, lines, x) { return Object.assign({ no, st, br: "ch", lines, days: 3, sent: "14.11.2026 15:20", exp: "17.11.2026", cmt: "", by: SUSER, reason: "", left: "", ev: [["14.11.2026 15:20", "Sent", "Продавец · " + SUSER]] }, x || {}); }
+const A0 = () => O(100244, 6, [["w", 200, 41000], ["b", 100, 43000]], { cmt: "Доставка нашим транспортом по Ташкенту бесплатно.", ev: [["14.11.2026 15:20", "Sent", "Продавец · Камола Р."], ["14.11.2026 16:05", "Replaced (by № 100245)", "Продавец · Камола Р."]] });
+const B0 = () => O(100245, 1, [["w", 200, 40000], ["b", 100, 43000]], { sent: "14.11.2026 16:05", cmt: "Цена на белые снижена до 40 000.", ev: [["14.11.2026 16:05", "Sent", "Продавец · Камола Р."]] });
+function base(o) {
+  closeModal();
+  S = Object.assign({ view: "bchat", side: "b", chat: true, offers: [], msgs: [], cart: null, form: null, short: false, order: null, flt: "all", ask: null, hist: true }, o || {});
+  render();
+}
+const off = no => S.offers.find(o => o.no === no);
+const pend = () => S.offers.find(o => o.st === 1), acc = () => S.offers.find(o => o.st === 2);
+function stdMsgs(withB) {
+  const m = [{ k: "card" }, { k: "t", me: "b", t: "Здравствуйте! Нужно 200 белых и 100 чёрных, размеры M–XL. Какая будет цена?", tm: "14:58" },
+    { k: "t", me: "s", t: "Добрый день! Сейчас пришлю предложение.", tm: "15:12" }, { k: "o", no: 100244 },
+    { k: "t", me: "b", t: "Сделайте 40 000 за белые — возьмём сразу.", tm: "15:48" }];
+  if (withB) m.push({ k: "o", no: 100245 });
+  return m;
+}
+// ---------------------------------------------------------------- shells
+function bHeader() {
+  return `<div class="strip"><span>➤ Ташкент, Юнусабад, 4-й квартал, 21</span><span>О компании · Связаться с нами · Доставка и оплата</span></div>
+  <div class="bh">${LOGO}<button class="btn pri">☰ Каталог</button><div class="srch"><input placeholder="Что вы ищете?"><button>Найти</button></div><span class="small">Русский · Избранное · <a data-a="tocart">Корзина</a> · <a data-a="tochat">Сообщения</a> · <b>Профиль</b></span></div>`;
+}
+function render() {
+  const v = S.view; let h = "";
+  if (v === "bprod") h = bHeader() + bProd();
+  else if (v === "bchat") h = bHeader() + `<div class="ptwrap"><div class="bc">Профиль › Сообщения</div>${chatBox("b")}</div>`;
+  else if (v === "schat") h = sellerShell("ch", "Чаты › <b>" + BUYER + "</b>", `<div style="padding:18px 22px">${chatBox("s")}</div>`) + (S.form ? formPanel() : "");
+  else if (v === "cart") h = bHeader() + cartPage();
+  else if (v === "order") h = bHeader() + orderPage();
+  else if (v === "slist") h = sellerShell("ch", "Чаты › <b>Предложения цены</b>", sList());
+  else if (v === "admin") h = adminPage();
+  else if (v === "app") h = appPage();
+  else if (v === "notif") h = notifPage();
+  $("#app").innerHTML = h;
+  const cb = $(".cbody"); if (cb) cb.scrollTop = cb.scrollHeight;
+}
+// ---------------------------------------------------------------- buyer product page
+function bProd() {
+  return `<div class="ptwrap"><div class="bc">Главная › Одежда › Футболки</div><div class="pp"><div class="pimg">фото товара</div><div>
+    <h1>${PROD}</h1><div class="small muted">Продавец: <b>${SELL}</b> · ★ 4.8 · Ташкент</div>
+    <div class="bigp">Договорная цена</div><div class="small">Минимальный заказ: ${MOQ} шт.</div>
+    <div class="mt8"><b class="small">Цвет</b><div class="vpick"><span class="on">Белый</span><span>Чёрный</span><span>Синий</span></div></div>
+    <div class="infob">Цену продавец предложит в чате. Принятое предложение вы оплатите на Optom, как обычный заказ.</div>
+    <div class="row mt8" style="gap:10px"><button class="btn pri big" data-a="write">✉ Написать продавцу</button></div>
+    <p class="small muted mt8">Нет кнопок «Добавить в корзину» и «Купить сейчас» (PT13).</p></div></div></div>`;
+}
+// ---------------------------------------------------------------- chat
+function chatList(side) {
+  const other = side === "b" ? SELL : BUYER;
+  return `<div class="clist"><div style="padding:12px 14px;font-weight:600">Сообщения</div>
+    <div class="ci on"><span class="th"></span><div><b>${other}</b><small>${PROD.slice(0, 30)}…</small><small>Предложение цены</small></div></div>
+    <div class="ci"><span class="th" style="background:#eee"></span><div><b>${side === "b" ? "ТехноОпт" : "Нодира С."}</b><small>Заказ №68726458</small></div></div></div>`;
+}
+function chatBox(side) {
+  const other = side === "b" ? SELL : BUYER;
+  const neg = S.negOff ? false : true;
+  const head = `<div class="chead"><span class="th"></span><div><b>${PROD}</b><div class="small muted">${neg ? "Договорная цена" : "Цена по диапазонам"} · <a>открыть товар</a> · ${other}</div></div><span class="sp"></span>
+    ${side === "s" ? (neg ? `<button class="btn pri" data-a="propose">₸ Предложить цену</button>` : `<span class="small muted">«Предложить цену» скрыта: товар больше не договорной</span>`) : ""}
+    ${side === "s" ? `<button class="btn out sm" data-a="toslist">Все предложения</button>` : ""}</div>`;
+  let body = "";
+  if (!S.chat) body = `<div class="sysm">Новый чат</div>`;
+  for (const m of S.msgs) {
+    if (m.k === "card") body += `<div class="pcm"><span class="th"></span><div><b class="small">${PROD}</b><div class="small">Договорная цена · мин. заказ ${MOQ} шт.</div><a class="small">Открыть товар</a></div></div>`;
+    else if (m.k === "t") body += `<div class="msg ${m.me === side ? "me" : ""}">${esc(m.t)}<small>${m.tm}</small></div>`;
+    else if (m.k === "sys") body += `<div class="sysm">${esc(m.t)}</div>`;
+    else if (m.k === "o") body += offerCard(off(m.no), side);
+  }
+  const ph = side === "b" && S.msgs.length <= 1 ? "Напишите, какие варианты и сколько штук нужно" : "Сообщение…";
+  return `<div class="chatw">${chatList(side)}<div class="cmain">${head}<div class="cbody">${body}</div>
+    <div class="cinput"><input id="msgin" placeholder="${ph}" ${S.focus ? "autofocus" : ""}><button class="btn pri" data-a="send">Отправить</button></div></div></div>`;
+}
+function offerCard(o, side, ro) {
+  if (!o) return "";
+  const dead = [4, 5, 6, 7, 8].includes(o.st);
+  const lab = o.st === 3 ? `Оплачено · заказ № ${S.order || "68731205"}` : LBL[o.st][0];
+  const lines = o.lines.map(l => `<div class="ln"><span>${VN[l[0]]}</span><span>${fmt(l[1])} шт. × ${fmt(l[2])} сум = <b>${fmt(l[1] * l[2])} сум</b></span></div>`).join("");
+  let acts = "";
+  if (!ro) {
+    if (side === "b") {
+      if (o.st === 1) acts = `<button class="btn pri" data-a="accept" data-n="${o.no}">Принять</button><button class="btn out" data-a="reject" data-n="${o.no}">Отклонить</button>`;
+      if (o.st === 2) acts = (S.cart && S.cart.offer === o.no && !S.cart.removed ? `<button class="btn pri" data-a="tocart">Перейти в корзину</button>` : `<button class="btn pri" data-a="readd" data-n="${o.no}">Добавить в корзину</button>`)
+        + `<button class="btn out" data-a="decline" data-n="${o.no}" ${S.paying ? "disabled title='Идёт оплата'" : ""}>Отказаться</button>${S.paying ? '<span class="small muted">Идёт оплата</span>' : ""}`;
+      if (o.st === 3) acts = `<button class="btn out" data-a="toorder">Заказ № ${S.order || "68731205"}</button>`;
+    } else {
+      if (o.st === 1) acts = `<button class="btn out" data-a="withdraw" data-n="${o.no}">Отозвать</button>`;
+      if (o.st === 2) acts = `<span class="small">Принято, ждёт оплаты до ${o.exp} 23:59</span>`;
+      if (o.st === 3) acts = `<button class="btn out" data-a="toorder">Заказ № ${S.order || "68731205"}</button>`;
+    }
+  }
+  const cd = (o.st === 1 || o.st === 2) && o.left ? `<span class="cd">Осталось ${o.left} ч</span>` : "";
+  const rs = o.st === 4 && o.reason ? `<div class="cmt">Причина: ${esc(o.reason)}</div>` : "";
+  const me = side === "s" ? "me" : "them";
+  return `<div class="ofr ${me} ${dead ? "dead" : ""}"><h4><span>Предложение цены № ${o.no}</span>${pill(lab, LBL[o.st][1])}</h4>${lines}
+    <div class="tot"><span>Итого · ${fmt(qty(o))} шт.</span><span>${fmt(tot(o))} сум</span></div>
+    <div class="meta">${BRS[o.br]} · Действует до ${o.exp} 23:59 ${cd}${side === "s" ? " · Отправил: " + o.by : ""}</div>
+    ${o.cmt ? `<div class="cmt">${esc(o.cmt)}</div>` : ""}${rs}${acts ? `<div class="acts">${acts}</div>` : ""}</div>`;
+}
+// ---------------------------------------------------------------- offer form (seller)
+function newForm(pre) {
+  if (pre) return { br: pre.br, lines: pre.lines.map(l => ({ v: l[0], q: l[1], p: l[2] })), days: pre.days, cmt: pre.cmt, errs: {}, replace: pre.no };
+  return { br: "ch", lines: [{ v: "", q: "", p: "" }], days: 3, cmt: "", errs: {}, replace: null };
+}
+function untilDate(d) { return { 1: "15.11.2026", 3: "17.11.2026", 7: "21.11.2026" }[d]; }
+function formPanel() {
+  const f = S.form, used = f.lines.map(l => l.v);
+  const ac = acc();
+  const rows = f.lines.map((l, i) => {
+    const e = f.errs[i] || {};
+    const opts = `<option value="">Вариант…</option>` + Object.keys(VN).map(k => `<option value="${k}" ${l.v === k ? "selected" : ""} ${used.includes(k) && l.v !== k ? "disabled" : ""}>${VN[k]} (${STOCK[f.br][k]} шт.)</option>`).join("");
+    const lt = (+l.q || 0) * (+l.p || 0);
+    return `<div class="oline"><select data-f="v" data-i="${i}" class="${e.v ? "e" : ""}">${opts}</select>
+      <input data-f="q" data-i="${i}" placeholder="Кол-во" value="${l.q}" class="${e.q ? "e" : ""}"><input data-f="p" data-i="${i}" placeholder="Цена за шт." value="${l.p ? fmt(l.p) : ""}" class="${e.p ? "e" : ""}">
+      <div class="lt">${lt ? fmt(lt) : "—"}</div><button class="x" data-a="dline" data-i="${i}" title="Удалить">×</button>
+      ${e.t ? `<div class="et">${e.t}</div>` : ""}</div>`;
+  }).join("");
+  const T = f.lines.reduce((a, l) => a + (+l.q || 0) * (+l.p || 0), 0), Q = f.lines.reduce((a, l) => a + (+l.q || 0), 0);
+  return `<div class="modal-bg" style="background:rgba(16,18,22,.25)"></div><div class="ofp"><div class="hd"><b style="font-size:16px">${f.replace ? "Новое предложение вместо № " + f.replace : "Предложение цены"}</b><button class="btn link" data-a="fclose">✕</button></div>
+   <div class="bd">${ac && !f.replace ? `<div class="infob">Покупатель принял предложение № ${ac.no}. Оно действует, пока покупатель не примет новое или не оплатит его.</div>` : ""}
+   <div class="small muted">Товар</div><b>${PROD}</b>
+   <div class="field mt8"><label class="small muted">Филиал</label><select data-f="br">${Object.keys(BRS).map(k => `<option value="${k}" ${f.br === k ? "selected" : ""}>${BRS[k]}</option>`).join("")}</select></div>
+   <div class="oline small muted" style="margin-bottom:-4px"><span>Вариант</span><span>Количество, шт.</span><span>Цена за шт., сум</span><span style="text-align:right">Сумма</span><span></span></div>${rows}
+   <button class="btn out sm" data-a="aline" ${f.lines.length >= 20 ? "disabled" : ""}>+ Добавить позицию</button>
+   <div class="row mt8" style="justify-content:space-between;font-weight:700;border-top:1px solid var(--line);padding-top:10px"><span>Итого · ${fmt(Q)} шт.</span><span>${fmt(T)} сум</span></div>
+   <div class="field mt8"><label class="small muted">Срок действия</label><div class="segm">${[1, 3, 7].map(d => `<span data-a="days" data-d="${d}" class="${f.days === d ? "on" : ""}">${d} ${d === 1 ? "день" : d === 3 ? "дня" : "дней"}</span>`).join("")}</div>
+     <div class="small muted mt8">Действует до ${untilDate(f.days)} 23:59 (Ташкент)</div></div>
+   <div class="field mt8"><label class="small muted">Комментарий (необязательно)</label><textarea data-f="cmt" rows="3" maxlength="500">${esc(f.cmt)}</textarea><div class="small muted">${f.cmt.length} / 500</div></div>
+   ${f.banner ? `<div class="errb">${f.banner}</div>` : ""}</div>
+   <div class="ft"><button class="btn out" data-a="fclose">Отмена</button><button class="btn pri" data-a="fsend">Отправить предложение</button></div></div>`;
+}
+function validate() {
+  const f = S.form; f.errs = {}; let bad = false;
+  const seen = {};
+  f.lines.forEach((l, i) => {
+    const e = {};
+    if (!l.v) { e.v = 1; e.t = "Выберите вариант"; }
+    else if (seen[l.v]) { e.v = 1; e.t = "Этот вариант уже есть в предложении"; }
+    seen[l.v] = 1;
+    const q = +l.q, p = +l.p;
+    if (!e.t && (!q || q < 1 || q > 100000)) { e.q = 1; e.t = "Количество — от 1 до 100 000 шт."; }
+    else if (!e.t && q > STOCK[f.br][l.v]) { e.q = 1; e.t = `На складе филиала «${BRS[f.br].split(",")[0].replace(/^(Филиал|Склад) /, "")}» только ${STOCK[f.br][l.v]} шт. «${VN[l.v]}»`; }
+    if (!e.t && (!p || p < 1 || p > 999999999)) { e.p = 1; e.t = p ? "Цена за шт. — от 1 до 999 999 999 сум" : "Укажите цену"; }
+    if (e.t) { f.errs[i] = e; bad = true; }
+  });
+  f.banner = bad ? "Исправьте ошибки в позициях." : "";
+  return !bad;
+}
+function sendOffer() {
+  const f = S.form;
+  const no = 100245 + S.offers.filter(o => o.no > 100245).length + 1;
+  const p = pend();
+  if (p) { p.st = 6; p.ev.push(["14.11.2026 17:02", "Replaced (by № " + no + ")", "Продавец · " + SUSER]); }
+  const o = O(no, 1, f.lines.map(l => [l.v, +l.q, +l.p]), { br: f.br, days: f.days, exp: untilDate(f.days), cmt: f.cmt, sent: "14.11.2026 17:02", ev: [["14.11.2026 17:02", "Sent", "Продавец · " + SUSER]] });
+  S.offers.push(o); S.msgs.push({ k: "o", no }); S.form = null; closeModal(); render(); toast("Предложение № " + no + " отправлено");
+}
+// ---------------------------------------------------------------- cart / order
+function cartPage() {
+  const o = S.cart && off(S.cart.offer);
+  const inCart = o && !S.cart.removed && o.st === 2;
+  const aside = o && (o.st === 7 || o.st === 8) && !S.cart.removed;
+  const extra = S.cart && S.cart.extra;
+  const ex = { t: "Сумка-шопер хлопковая", q: 100, p: 12000 };
+  let groups = "";
+  if (inCart || extra) {
+    groups += `<div class="cgrp"><div class="gh"><span>${SELL} · Филиал Чиланзар</span><span class="small muted">Отправка из: Филиал Чиланзар</span></div>`;
+    if (inCart) groups += `<div class="offg"><div class="oh"><span><input type="checkbox" checked> 🔒 Цена по договорённости · предложение № ${o.no} · оплатить до ${o.exp} 23:59</span><a data-a="cdel">Удалить</a></div>
+      ${o.lines.map(l => `<div class="cl"><span></span><span class="th"></span><div>${PROD}<div class="small muted">Цвет: ${VN[l[0]]}</div></div><span class="stp lock"><button disabled>−</button><input value="${l[1]}" disabled><button disabled>+</button></span><div class="pr">${fmt(l[1] * l[2])} сум<small>${fmt(l[2])} сум/шт.</small></div></div>`).join("")}
+      <div class="small muted">Количество, цена и филиал заданы предложением и не меняются. Промокоды не применяются.</div></div>`;
+    if (extra) groups += `<div class="cl"><input type="checkbox" checked><span class="th" style="background:#e8e2d6"></span><div>${ex.t}<div class="small muted">Фиксированная цена · мин. заказ 50 шт.</div></div><span class="stp"><button>−</button><input value="${ex.q}"><button>+</button></span><div class="pr">${fmt(ex.q * ex.p)} сум<small>${fmt(ex.p)} сум/шт.</small></div></div>`;
+    groups += `</div>`;
+  }
+  let sa = "";
+  if (aside) sa = `<div class="setaside"><b>Нет в наличии</b><div class="offg" style="opacity:.75"><div class="oh"><span>Цена по договорённости · предложение № ${o.no}</span><a data-a="cdel">Удалить</a></div>
+      ${o.lines.map(l => `<div class="small">${VN[l[0]]} · ${l[1]} шт. × ${fmt(l[2])} сум</div>`).join("")}
+      <div class="${o.st === 7 ? "warnb" : "errb"}">${o.st === 7 ? "Предложение истекло. Попросите продавца прислать новое." : "Предложение больше недоступно"} <a data-a="tochat">Открыть чат</a></div><div class="small muted">Строки удалятся из корзины через 7 дней ⚑ OQ-PT12.</div></div></div>`;
+  if (S.short && inCart) sa = `<div class="setaside"><b>Нет в наличии</b><div class="errb">Сейчас на складе только 150 шт. «Белый». Попросите продавца прислать новое предложение. <a data-a="tochat">Открыть чат</a></div></div>`;
+  const sum = (inCart && !S.short ? tot(o) : 0) + (extra ? ex.q * ex.p : 0);
+  const empty = !groups && !sa ? `<div class="cgrp">Корзина пуста.</div>` : "";
+  return `<div class="ptwrap"><h2 style="margin:0 0 14px">Корзина</h2><div class="cart"><div>${groups}${sa}${empty}</div>
+    <div class="aside-sum"><b>Ваш заказ</b><div class="r"><span>Товары</span><span>${fmt(sum)} сум</span></div><div class="r small muted"><span>Промокод</span><span>не применяется к предложению</span></div>
+    <div class="r" style="font-weight:700;font-size:16px"><span>Итого</span><span>${fmt(sum)} сум</span></div>
+    <button class="btn pri big" style="width:100%" data-a="pay" ${sum ? "" : "disabled"}>Оформить и оплатить</button>
+    <div class="small muted mt8">Доставка выбирается при оформлении. Для бесплатной доставки продавцом строка предложения учитывается по договорной цене и количеству.</div></div></div></div>`;
+}
+function orderPage() {
+  const o = off(S.cart.offer);
+  return `<div class="ptwrap"><div class="bc">Профиль › Заказы</div><div class="card"><h3 style="margin:0">Заказ № ${S.order}</h3><div class="small muted">Оплачен 15.11.2026 в 10:42 · ${SELL} · Филиал Чиланзар</div>
+    <div class="mt8">${pill("Новый", "g")}</div>
+    ${o.lines.map(l => `<div class="cl" style="grid-template-columns:52px 1fr 220px"><span class="th"></span><div>${PROD}<div class="small muted">Цвет: ${VN[l[0]]} · ${l[1]} шт.</div></div><div class="pr">${fmt(l[1] * l[2])} сум<small>${fmt(l[2])} сум/шт. · <b>Цена по договорённости</b> · <a data-a="tochat">Предложение № ${o.no}</a></small></div></div>`).join("")}
+    <div class="cl" style="grid-template-columns:52px 1fr 220px"><span class="th" style="background:#e8e2d6"></span><div>Сумка-шопер хлопковая<div class="small muted">100 шт.</div></div><div class="pr">1 200 000 сум<small>12 000 сум/шт.</small></div></div>
+    <div class="row mt8" style="justify-content:space-between;font-weight:700"><span>Итого</span><span>${fmt(tot(o) + 1200000)} сум</span></div></div></div>`;
+}
+// ---------------------------------------------------------------- seller list / admin / app / notifications
+function sList() {
+  const rows = [[100245, "Футболка хлопковая базовая", BUYER, 12300000, 2, "17.11.2026", SUSER, "14.11.2026 16:05"],
+    [100244, "Футболка хлопковая базовая", BUYER, 12500000, 6, "17.11.2026", SUSER, "14.11.2026 15:20"],
+    [100231, "Худи с начёсом", "Нодира Саидова", 18400000, 3, "12.11.2026", "Бахтиёр К.", "10.11.2026 11:02"],
+    [100219, "Футболка хлопковая базовая", "ООО «Стиль Плюс»", 6200000, 4, "11.11.2026", SUSER, "08.11.2026 09:40"],
+    [100204, "Поло пике", "Жасур Т.", 3150000, 7, "09.11.2026", "Бахтиёр К.", "08.11.2026 18:15"],
+    [100198, "Поло пике", "Малика Р.", 2700000, 5, "07.11.2026", SUSER, "06.11.2026 12:30"]];
+  const f = S.flt;
+  const vis = rows.filter(r => f === "all" || (f === "act" && [1, 2].includes(r[4])) || (f === "paid" && r[4] === 3) || (f === "closed" && [4, 5, 6, 7, 8].includes(r[4])));
+  return `<div style="padding:18px 22px"><div class="h1">Предложения цены</div>
+   <div class="fchips">${[["all", "Все"], ["act", "Ожидают ответа и оплаты"], ["paid", "Оплачено"], ["closed", "Закрыты"]].map(c => `<span data-a="flt" data-f="${c[0]}" class="${f === c[0] ? "on" : ""}">${c[1]}</span>`).join("")}<span>Товар ▾</span><span>Период: 01.11 – 14.11.2026 ▾</span></div>
+   <table class="tbl"><tr><th>№</th><th>Товар</th><th>Покупатель</th><th>Сумма</th><th>Статус</th><th>Действует до</th><th>Отправил</th><th>Отправлено</th></tr>
+   ${vis.map(r => `<tr data-a="toschat" style="cursor:pointer"><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${fmt(r[3])} сум</td><td>${pill(r[4] === 3 ? "Оплачено" : LBL[r[4]][0], LBL[r[4]][1])}</td><td>${r[5]}</td><td>${r[6]}</td><td>${r[7]}</td></tr>`).join("") || `<tr><td colspan="8">Предложений цены пока нет. Отправьте его из чата о товаре с договорной ценой.</td></tr>`}</table>
+   <p class="small muted">20 строк на странице; строка открывает чат на карточке предложения.</p></div>`;
+}
+function adminPage() {
+  const o = off(100245), a = off(100244);
+  const hist = x => `<div class="histp"><b>История предложения № ${x.no}</b>${x.ev.map(e => `<div class="it"><span>${e[0]}</span><span>${e[1]}</span><span>${e[2]}</span></div>`).join("")}</div>`;
+  return `<div class="ash"><aside class="aside">${LOGO}<div class="anav">Пользователи</div><div class="anav on">Жалобы</div><div class="anav">Заказы</div><div class="anav">Товары</div></aside>
+   <div class="apanel" style="padding:18px 22px"><div class="small muted">Жалобы › Чат ${BUYER} — ${SELL}</div><h1 style="font-size:20px">Чат о товаре «${PROD}» <span class="tagt">только просмотр</span></h1>
+   <div class="alert i"><span>Администратор видит предложения и их историю, но не может их менять (PT37). Заблокированный чат делает открытые предложения «Недоступно».</span></div>
+   <div class="row" style="align-items:flex-start;gap:20px"><div style="flex:1;display:flex;flex-direction:column;gap:10px">${offerCard(a, "a", true)}${hist(a)}</div><div style="flex:1;display:flex;flex-direction:column;gap:10px">${offerCard(o, "a", true)}${hist(o)}</div></div></div></div>`;
+}
+function appPage() {
+  const o = off(100245);
+  return `<div class="phonewrap"><div class="phone"><div class="sb"><span>9:41</span><span>▮▮▮ ◔</span></div>
+   <div class="ah" style="display:flex;gap:10px;align-items:center;padding:10px 14px;background:#fff;border-bottom:1px solid var(--line)"><span>‹</span><span class="thumb"></span><div><b class="small">${SELL}</b><div class="small muted">${PROD.slice(0, 26)}… · Договорная цена</div></div></div>
+   <div class="cbody" style="max-height:600px;padding:10px">${S.msgs.slice(-3).map(m => m.k === "t" ? `<div class="msg ${m.me === "b" ? "me" : ""}" style="max-width:80%">${esc(m.t)}</div>` : m.k === "o" ? offerCard(off(m.no), "b").replace('class="ofr', 'style="width:100%" class="ofr') : "").join("")}</div>
+   <div class="cinput" style="padding:8px"><input placeholder="Сообщение…"><button class="btn pri sm">➤</button></div></div></div>`;
+}
+function notifPage() {
+  const it = [["OFR-01 · покупателю", "Новое предложение цены", `${SELL}: ${PROD.slice(0, 24)}… — 12 300 000 сум. Действует до 17.11.2026 23:59`],
+    ["OFR-02 · продавцу", "Предложение принято", `${BUYER} принял предложение № 100245 на 12 300 000 сум. Ждём оплаты до 17.11.2026 23:59`],
+    ["OFR-03 · покупателю, 17.11 в 10:00", "Предложение истекает сегодня", `${PROD.slice(0, 24)}… — 12 300 000 сум: предложение действует до 23:59`],
+    ["OFR-04 · продавцу", "Предложение истекло", `Предложение № 100245 для ${BUYER} истекло без оплаты`]];
+  return `<div class="ptwrap"><div class="row" style="align-items:flex-start;gap:30px"><div><b>Сайт: список уведомлений (pull)</b><div class="nlist mt8">${it.map(i => `<div class="ni"><span class="tagt">${i[0]}</span><b>${i[1]}</b><span class="small">${i[2]}</span></div>`).join("")}</div></div>
+   <div><b>Приложение: push</b><div class="phone" style="min-height:520px;background:linear-gradient(160deg,#3a4a68,#1f2738)"><div class="sb" style="background:transparent;color:#fff"><span>9:41</span><span></span></div>${it.map(i => `<div class="push"><span class="small muted">optom · сейчас</span><b>${i[1]}</b>${i[2]}</div>`).join("")}</div></div></div>
+   <p class="small muted mt8">Нет SMS и e-mail. Для карточки предложения обычное уведомление «новое сообщение в чате» не отправляется ⚑ OQ-PT19. Отклонение, отзыв, отказ и «Недоступно» — без уведомлений ⚑ OQ-PT31.</p></div>`;
+}
+// ---------------------------------------------------------------- actions
+function confirmBox(title, body, yes, onYes, danger) {
+  modal(`<h3>${title}</h3>${body ? `<p class="sub">${body}</p>` : ""}<div class="acts"><button class="btn out" id="mno">Отмена</button><button class="btn ${danger ? "danfill" : "pri"}" id="myes">${yes}</button></div>`);
+  $("#mno").onclick = closeModal; $("#myes").onclick = () => { closeModal(); onYes(); };
+}
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-a]"); if (!t) return;
+  const a = t.dataset.a, n = +t.dataset.n;
+  if (a === "write") { S.view = "bchat"; if (!S.msgs.length) S.msgs = [{ k: "card" }]; S.chat = true; render(); toast("Чат о товаре создан"); }
+  else if (a === "tochat") { S.view = S.side === "s" ? "schat" : "bchat"; render(); }
+  else if (a === "tocart") { S.view = "cart"; render(); }
+  else if (a === "toorder") { S.view = "order"; render(); }
+  else if (a === "toslist") { S.view = "slist"; render(); }
+  else if (a === "toschat") { S.view = "schat"; render(); }
+  else if (a === "flt") { S.flt = t.dataset.f; render(); }
+  else if (a === "send") { const v = $("#msgin").value.trim(); if (v) { S.msgs.push({ k: "t", me: S.view === "schat" ? "s" : "b", t: v, tm: "17:10" }); render(); } }
+  else if (a === "propose") { S.form = newForm(pend()); render(); }
+  else if (a === "fclose") { S.form = null; render(); }
+  else if (a === "aline") { if (S.form.lines.length < 20) S.form.lines.push({ v: "", q: "", p: "" }); render(); }
+  else if (a === "dline") { S.form.lines.splice(+t.dataset.i, 1); if (!S.form.lines.length) S.form.lines.push({ v: "", q: "", p: "" }); render(); }
+  else if (a === "days") { S.form.days = +t.dataset.d; render(); }
+  else if (a === "fsend") {
+    if (!validate()) { render(); return; }
+    const low = S.form.lines.find(l => +l.q < MOQ);
+    const go2 = () => { const p = pend(); if (p) confirmBox("Заменить предложение?", `Новое предложение заменит предложение № ${p.no}. Отправить?`, "Отправить", sendOffer); else sendOffer(); };
+    if (low) confirmBox("Меньше минимального заказа", `Меньше минимального заказа (${MOQ} шт.). Всё равно отправить?`, "Отправить", go2); else go2();
+  }
+  else if (a === "withdraw") confirmBox("Отозвать предложение?", `Отозвать предложение № ${n}? Покупатель не сможет его принять.`, "Отозвать", () => { const o = off(n); o.st = 5; o.ev.push(["14.11.2026 17:20", "Withdrawn", "Продавец · " + SUSER]); S.msgs.push({ k: "sys", t: `Продавец отозвал предложение № ${n}` }); render(); }, true);
+  else if (a === "accept") {
+    const o = off(n);
+    confirmBox("Принять предложение?", `Товары на ${fmt(tot(o))} сум попадут в корзину. Оплатить нужно до ${o.exp} 23:59.`, "Принять", () => {
+      if (S.short) { toast("Сейчас на складе только 150 шт. «Белый». Попросите продавца прислать новое предложение."); modal(`<h3>Не удалось принять</h3><p class="sub">Сейчас на складе только 150 шт. «Белый». Попросите продавца прислать новое предложение.</p><div class="acts"><button class="btn pri" id="mno">Понятно</button></div>`); $("#mno").onclick = closeModal; return; }
+      const prev = acc(); if (prev) { prev.st = 6; prev.ev.push(["15.11.2026 09:30", "Replaced (buyer accepted № " + n + ")", "Покупатель"]); }
+      o.st = 2; o.ev.push(["15.11.2026 09:30", "Accepted", "Покупатель · " + BUYER]); S.cart = { offer: n, removed: false, extra: S.cart ? S.cart.extra : false };
+      render(); toast("Предложение принято и добавлено в корзину");
+    });
+  }
+  else if (a === "reject") {
+    modal(`<h3>Отклонить предложение?</h3><p class="sub">Укажите причину, если хотите.</p><div class="fchips" id="rch">${["Высокая цена", "Не подходит количество", "Не подходят условия", "Уже не нужно", "Другое"].map(r => `<span>${r}</span>`).join("")}</div>
+      <textarea id="rcm" rows="3" maxlength="300" style="width:100%;border:1px solid var(--line-2);border-radius:9px;padding:8px" placeholder="Комментарий (необязательно)"></textarea>
+      <div class="acts"><button class="btn out" id="mno">Отмена</button><button class="btn danfill" id="myes">Отклонить</button></div>`);
+    let r = "";
+    document.querySelectorAll("#rch span").forEach(s => s.onclick = () => { document.querySelectorAll("#rch span").forEach(x => x.classList.remove("on")); if (r === s.textContent) { r = ""; } else { r = s.textContent; s.classList.add("on"); } });
+    $("#mno").onclick = closeModal;
+    $("#myes").onclick = () => { const o = off(n); o.st = 4; o.reason = r; o.ev.push(["15.11.2026 09:31", "Rejected" + (r ? " · " + r : ""), "Покупатель · " + BUYER]); S.msgs.push({ k: "sys", t: r ? `Покупатель отклонил предложение № ${n}: ${r}` : `Покупатель отклонил предложение № ${n}` }); closeModal(); render(); };
+  }
+  else if (a === "decline") confirmBox("Отказаться от предложения?", `Отказаться от принятого предложения № ${n}? Товары будут удалены из корзины.`, "Отказаться", () => { const o = off(n); o.st = 4; o.reason = "отказ после принятия"; o.ev.push(["15.11.2026 11:00", "Declined", "Покупатель · " + BUYER]); if (S.cart && S.cart.offer === n) S.cart.removed = true; S.msgs.push({ k: "sys", t: `Покупатель отказался от принятого предложения № ${n}` }); render(); }, true);
+  else if (a === "readd") { S.cart = { offer: n, removed: false, extra: S.cart ? S.cart.extra : false }; render(); toast("Предложение снова в корзине"); }
+  else if (a === "cdel") { const o = off(S.cart.offer); confirmBox("Удалить предложение из корзины?", o.st === 2 ? `Вернуть его можно в чате до ${o.exp} 23:59.` : "", "Удалить", () => { S.cart.removed = true; render(); }); }
+  else if (a === "pay") {
+    const o = S.cart && off(S.cart.offer);
+    if (o && o.st === 2 && !S.cart.removed && S.short) { render(); toast("Предложение перенесено в «Нет в наличии»"); return; }
+    S.order = "68731205"; if (o && o.st === 2 && !S.cart.removed) { o.st = 3; o.ev.push(["15.11.2026 10:42", "PaymentStarted", "Покупатель"], ["15.11.2026 10:42", "Ordered (заказ № 68731205)", "Платформа"]); }
+    S.view = "order"; render(); toast("Оплата прошла. Заказ № 68731205 создан");
+  }
+});
+document.addEventListener("input", e => {
+  const t = e.target; if (!S.form || !t.dataset.f) return;
+  const f = t.dataset.f, i = +t.dataset.i;
+  if (f === "cmt") { S.form.cmt = t.value; const c = t.nextElementSibling; if (c) c.textContent = t.value.length + " / 500"; return; }
+  if (f === "q" || f === "p") { S.form.lines[i][f] = t.value.replace(/\D/g, ""); }
+});
+document.addEventListener("change", e => {
+  const t = e.target; if (!S.form || !t.dataset.f) return;
+  if (t.dataset.f === "br") S.form.br = t.value; else if (t.dataset.f === "v") S.form.lines[+t.dataset.i].v = t.value; else return;
+  render();
+});
+document.addEventListener("focusout", e => { const t = e.target; if (S.form && (t.dataset.f === "q" || t.dataset.f === "p")) render(); });
+
+// ---------------------------------------------------------------- scenarios
+const SC = [
+ { label: "Buyer · negotiable product page", apply: () => base({ view: "bprod", chat: false, msgs: [] }),
+   notes: ["«Договорная цена», minimum order (shown when above 1, ⚑ OQ-PT32) and one button «Написать продавцу»; no «Добавить в корзину», no «Купить сейчас» (PT13).", "No «Запросить цену» request form (PT22) and no price hint (later, OQ-PT21).", "Click «Написать продавцу» to create the product chat."], src: "US-BF-3.5-01 AC6 · US-BF-4.1-03" },
+ { label: "Buyer · new chat about the product", apply: () => base({ view: "bchat", msgs: [{ k: "card" }] }),
+   notes: ["One chat per buyer + seller + product (PT21). Created once; the product card is its first message (PT22).", "Header and list row show the product. Placeholder T14 guides the buyer: variants and quantity.", "Clicking «Написать продавцу» again opens the same chat, no second card."], src: "US-BF-4.1-03 AC2 – AC4" },
+ { label: "Seller · product chat, «Предложить цену»", apply: () => base({ view: "schat", side: "s", msgs: stdMsgs(false).slice(0, 2) }),
+   notes: ["Seller panel chat with the product in the header and «Предложить цену» (only while the product is Negotiable, PT29).", "«Все предложения» opens the seller's offers list (scenario 17).", "Click «Предложить цену» to open the offer form."], src: "US-SF-4.2-01 AC1 · US-BF-4.1-03 AC6" },
+ { label: "Seller · offer form, filled", apply: () => base({ view: "schat", side: "s", msgs: stdMsgs(false).slice(0, 3), form: { br: "ch", lines: [{ v: "w", q: "200", p: "41000" }, { v: "b", q: "100", p: "43000" }], days: 3, cmt: "Доставка нашим транспортом по Ташкенту бесплатно.", errs: {}, replace: null } }),
+   notes: ["Branch, lines (variant with stock at the branch, quantity, price, line total), «Добавить позицию» up to 20, total and total quantity, validity 1 / 3 / 7 days with the end date, comment ≤ 500.", "A variant already used is disabled in the other pickers.", "«Отправить предложение» runs the checks; try changing the branch to «Склад Сергели»: white has only 120 there."], src: "US-SF-4.2-01 AC2 – AC5, AC7" },
+ { label: "Seller · offer form, errors", apply: () => { base({ view: "schat", side: "s", msgs: stdMsgs(false).slice(0, 3), form: { br: "ch", lines: [{ v: "w", q: "600", p: "41000" }, { v: "w", q: "100", p: "40000" }, { v: "b", q: "100", p: "" }], days: 3, cmt: "", errs: {}, replace: null } }); validate(); render(); },
+   notes: ["Errors at the line: stock short at the branch (M-PT15), duplicate variant (M-PT16), empty price (M-PT5). Nothing is sent; the form keeps the data.", "Below the minimum order (50 here) the seller is asked M-PT20 and may send anyway (⚑ OQ-PT9)."], src: "US-SF-4.2-01 AC5, AC6" },
+ { label: "Seller · replace a waiting offer", apply: () => base({ view: "schat", side: "s", offers: [O(100244, 1, [["w", 200, 41000], ["b", 100, 43000]], { cmt: "Доставка нашим транспортом по Ташкенту бесплатно." })], msgs: stdMsgs(false) }),
+   notes: ["An offer is waiting. «Предложить цену» opens the form pre-filled with it; sending asks M-PT14 and the old offer becomes «Заменено новым предложением».", "Try: open the form, change the white price to 40 000, send."], src: "US-SF-4.2-01 AC8" },
+ { label: "Buyer · offer waiting for an answer", apply: () => base({ view: "bchat", offers: [A0(), Object.assign(B0(), { left: 7 })], msgs: stdMsgs(true) }),
+   notes: ["Card: number, lines, total and quantity, branch, «Действует до … 23:59», comment, status. «Принять» and «Отклонить».", "The replaced offer stays in the history, greyed, without buttons.", "Countdown «Осталось N ч» in the last 24 hours (M-PT42).", "To renegotiate the buyer just writes in the chat (PT24)."], src: "US-BF-4.2-01 AC1, AC8, AC12" },
+ { label: "Buyer · «Принять»: confirmation", apply: () => { base({ view: "bchat", offers: [A0(), B0()], msgs: stdMsgs(true) }); setTimeout(() => document.querySelector('[data-a="accept"]').click(), 50); },
+   notes: ["M-PT23 states the total and the payment deadline. After «Принять» the offer is «Принято, ждёт оплаты», its lines go to the cart as a locked group and the seller gets OFR-02.", "Checks run in one transaction: still waiting, not ended, product and branch available, stock ≥ quantity, no payment in progress for an earlier accepted offer."], src: "US-BF-4.2-01 AC2 – AC4" },
+ { label: "Buyer · «Принять» refused: stock short", apply: () => base({ view: "bchat", offers: [A0(), B0()], msgs: stdMsgs(true), short: true }),
+   notes: ["Try «Принять»: white is down to 150 at the branch, so acceptance is refused with M-PT25 and the offer stays waiting.", "Other refusals: replaced/withdrawn/expired → M-PT24; product on moderation → M-PT45; unavailable → M-PT46."], src: "US-BF-4.2-01 AC6" },
+ { label: "Buyer · «Отклонить» with a reason", apply: () => { base({ view: "bchat", offers: [A0(), B0()], msgs: stdMsgs(true) }); setTimeout(() => document.querySelector('[data-a="reject"]').click(), 50); },
+   notes: ["Optional reason chips (L-PT8, ⚑ OQ-PT16) and comment ≤ 300. The system message M-PT28 (or M-PT28b without a reason) appears for both sides.", "No notification to the seller (⚑ OQ-PT31); the seller may send a new offer."], src: "US-BF-4.2-01 AC7" },
+ { label: "Buyer · accepted offer: cart, «Отказаться»", apply: () => base({ view: "bchat", offers: [A0(), Object.assign(B0(), { st: 2, left: 20 })], msgs: stdMsgs(true), cart: { offer: 100245, removed: false, extra: false } }),
+   notes: ["Accepted card: «Перейти в корзину» (or «Добавить в корзину» if removed) and «Отказаться» (⚑ OQ-PT30): declining closes the offer as «Отклонено» and removes its cart lines.", "While a payment is in progress «Отказаться» is disabled («Идёт оплата»)."], src: "US-BF-4.2-01 AC9 – AC11" },
+ { label: "Seller · offer history in the chat", apply: () => base({ view: "schat", side: "s", offers: [A0(), Object.assign(B0(), { st: 4, reason: "Высокая цена", ev: [["14.11.2026 16:05", "Sent", "Продавец · Камола Р."], ["14.11.2026 18:40", "Rejected · Высокая цена", "Покупатель"]] }), O(100247, 2, [["w", 200, 39500], ["b", 100, 42500]], { sent: "15.11.2026 09:10", exp: "18.11.2026", by: "Бахтиёр К." })], msgs: stdMsgs(true).concat([{ k: "sys", t: "Покупатель отклонил предложение № 100245: Высокая цена" }, { k: "t", me: "s", t: "Понимаю, отправил новое с учётом объёма.", tm: "09:10" }, { k: "o", no: 100247 }]) }),
+   notes: ["Every offer stays in the chat in order with its final status; nothing is edited or hidden (BR-PT11).", "The seller side shows who sent each offer («Отправил»).", "The accepted offer cannot be withdrawn (PT26)."], src: "US-SF-4.2-01 AC11, AC14" },
+ { label: "Seller · «Отозвать»", apply: () => { base({ view: "schat", side: "s", offers: [A0(), B0()], msgs: stdMsgs(true) }); setTimeout(() => document.querySelector('[data-a="withdraw"]').click(), 50); },
+   notes: ["Only a waiting offer can be withdrawn. Confirmation M-PT35; then «Отозвано продавцом» and the system message M-PT29; no notification (⚑ OQ-PT31)."], src: "US-SF-4.2-01 AC10" },
+ { label: "Buyer · cart: locked offer group", apply: () => base({ view: "cart", offers: [Object.assign(B0(), { st: 2 })], msgs: stdMsgs(true), cart: { offer: 100245, removed: false, extra: true } }),
+   notes: ["The offer is one locked group in the branch group of its branch: no stepper, no branch change, no price change; selected and removed as a whole (M-PT30 keeps the offer accepted).", "Ordinary lines of the same branch go in the same order (PT33). No promo codes on offer lines (PT34).", "Click «Оформить и оплатить» to create the order (payment shortened in this prototype)."], src: "US-BF-4.2-02 AC1 – AC6, AC8" },
+ { label: "Buyer · cart: offer expired or unavailable", apply: () => base({ view: "cart", offers: [Object.assign(B0(), { st: 7 })], msgs: stdMsgs(true), cart: { offer: 100245, removed: false, extra: true } }),
+   notes: ["An offer that ended unpaid moves to «Нет в наличии» with M-PT32 and «Открыть чат»; the other lines can be paid.", "Unavailable (branch off, product blocked…) looks the same with M-PT46. Lines are removed after 7 days (⚑ OQ-PT12).", "Stock short at «Оплатить» moves the group the same way with M-PT25."], src: "US-BF-4.2-02 AC7, AC10 – AC12" },
+ { label: "Buyer · order with «Цена по договорённости»", apply: () => base({ view: "order", offers: [Object.assign(B0(), { st: 3 })], msgs: stdMsgs(true), cart: { offer: 100245, removed: false, extra: true }, order: "68731205" }),
+   notes: ["Order lines keep the agreed price with «Цена по договорённости» (M-PT13) and a link to the offer (PT36).", "The offer becomes «Оплачено · заказ № …». Cancelling the order does not reopen it (⚑ OQ-PT11)."], src: "US-BF-4.2-02 AC8, AC13, AC14" },
+ { label: "Seller · list «Предложения цены»", apply: () => base({ view: "slist", side: "s", offers: [A0(), Object.assign(B0(), { st: 2 })], msgs: stdMsgs(true) }),
+   notes: ["All offers of the seller account, newest first, with status filters, product and period (⚑ OQ-PT15). A row opens the chat at the card.", "Only the account's own offers are listed."], src: "US-AF-2.1-04 AC6 – AC8" },
+ { label: "Admin · offers read-only with the log", apply: () => base({ view: "admin", offers: [A0(), Object.assign(B0(), { st: 3, ev: [["14.11.2026 16:05", "Sent", "Продавец · Камола Р."], ["15.11.2026 09:30", "Accepted", "Покупатель · Азиз Хамидов"], ["15.11.2026 10:40", "PaymentStarted", "Покупатель"], ["15.11.2026 10:42", "Ordered (заказ № 68731205)", "Платформа"]] })], msgs: stdMsgs(true), order: "68731205" }),
+   notes: ["Cards without buttons plus the event history: event, who, when (PT37).", "No admin action changes an offer; an admin API call to do so gets HTTP 403. Blocking the chat makes open offers «Недоступно»."], src: "US-AF-2.1-04 AC1 – AC4" },
+ { label: "Buyer app · chat and offer card", apply: () => base({ view: "app", offers: [A0(), Object.assign(B0(), { left: 7 })], msgs: stdMsgs(true) }),
+   notes: ["The same card and buttons in the buyer app. After «Принять» the app shows a snackbar «В корзину» (⚑ OQ-PT28)."], src: "US-BF-4.1-03 AC10 · US-BF-4.2-01 AC15" },
+ { label: "Notifications OFR-01 – OFR-04", apply: () => base({ view: "notif" }),
+   notes: ["Four notifications (PT38): web in-app list, push in the mobile apps; no SMS or e-mail.", "OFR-03 at 10:00 on the last day (⚑ OQ-PT13). Texts from PRD section 8 (RU shown)."], src: "US-BF-8.1-06" },
+];
+harness({ title: "P-PT3 Negotiation: chat, offer, cart, order", stories: "US-BF-4.1-03, US-SF-4.2-01, US-BF-4.2-01, US-BF-4.2-02, US-AF-2.1-04, US-BF-8.1-06", version: "1.0" }, SC);
+
+</script></body></html>
