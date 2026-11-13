@@ -286,7 +286,7 @@ document.addEventListener("click", e => {
     $("#mno").onclick = closeModal;
     $("#myes").onclick = () => { const o = off(n); o.st = 4; o.reason = r; o.ev.push(["15.11.2026 09:31", "Rejected" + (r ? " · " + r : ""), "Покупатель · " + BUYER]); S.msgs.push({ k: "sys", t: r ? `Покупатель отклонил предложение № ${n}: ${r}` : `Покупатель отклонил предложение № ${n}` }); closeModal(); render(); };
   }
-  else if (a === "decline") confirmBox("Отказаться от предложения?", `Отказаться от принятого предложения № ${n}? Товары будут удалены из корзины.`, "Отказаться", () => { const o = off(n); o.st = 4; o.reason = "отказ после принятия"; o.ev.push(["15.11.2026 11:00", "Declined", "Покупатель · " + BUYER]); if (S.cart && S.cart.offer === n) S.cart.removed = true; S.msgs.push({ k: "sys", t: `Покупатель отказался от принятого предложения № ${n}` }); render(); }, true);
+  else if (a === "decline") confirmBox(`Отказаться от принятого предложения № ${n}?`, "Товары предложения будут удалены из корзины.", "Отказаться", () => { const o = off(n); o.st = 4; o.reason = ""; o.ev.push(["15.11.2026 11:00", "Declined", "Покупатель · " + BUYER]); if (S.cart && S.cart.offer === n) S.cart.removed = true; S.msgs.push({ k: "sys", t: `Покупатель отказался от принятого предложения № ${n}` }); render(); }, true);
   else if (a === "readd") { S.cart = { offer: n, removed: false, extra: S.cart ? S.cart.extra : false }; render(); toast("Предложение снова в корзине"); }
   else if (a === "cdel") { const o = off(S.cart.offer); confirmBox("Удалить предложение из корзины?", o.st === 2 ? `Вернуть его можно в чате до ${o.exp} 23:59.` : "", "Удалить", () => { S.cart.removed = true; render(); }); }
   else if (a === "pay") {

@@ -726,7 +726,7 @@ function cartPage() {
         <span class="stp"><button data-a="m" data-i="${l.id}">−</button><input value="${l.q}" data-q="${l.id}"><button data-a="p" data-i="${l.id}">+</button></span>
         <div class="pr">${fmt(p * l.q)} сум<small>${S.d && l.type === "R" ? `<s>${fmt(TIERS[below ? 0 : ti][2])}</s> ` : ""}${fmt(p)} сум/шт.</small></div></div>`;
     }
-    if (below) h += `<div class="errb">Минимальный заказ товара «${RNAME}» — ${TIERS[0][0]} шт. всего, сейчас ${tq} шт. Оформить заказ из этого филиала пока нельзя.</div>`;
+    if (below) h += `<div class="errb">Минимальный заказ товара «${RNAME}» — ${TIERS[0][0]} шт. всего, сейчас ${tq} шт.</div><div class="small muted">«Оформить заказ» для этого филиала недоступно, пока не наберётся минимум.</div>`;
     else if (tq && next) h += `<div class="hintg">Добавьте ещё ${next[0] - tq} шт. — цена ${fmt(disc(next[2], S.d))} сум за шт.</div>`;
     if (tq) h += `<div class="small muted">Цена по диапазону для ${tq} шт. (сумма выбранных вариантов этого филиала).</div>`;
     h += `<div class="row mt8" style="justify-content:flex-end"><button class="btn pri" data-a="checkout" ${below || !tq && !ls.some(l => l.type === "F" && l.sel) ? "disabled" : ""}>Оформить заказ</button></div></div>`;
